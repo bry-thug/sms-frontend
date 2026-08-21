@@ -1,0 +1,2031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Divine Healer's Basic School — Academic Records System</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
+
+  :root{
+    --ink:#1B2A4A;
+    --ink-2:#2C4067;
+    --parchment:#F6F1E4;
+    --paper:#FFFDF7;
+    --gold:#B8873A;
+    --gold-light:#E8D5A8;
+    --green:#3B6E4F;
+    --red:#A3403F;
+    --line:#DDD2B8;
+    --text:#2A2620;
+    --muted:#7A7260;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--parchment); color:var(--text);
+    font-family:'Inter',sans-serif; font-size:14px;
+  }
+  h1,h2,h3,.serif{font-family:'Lora',serif;}
+  .app{display:flex; min-height:100vh;}
+
+  /* Sidebar */
+  .sidebar{
+    width:220px; background:var(--ink); color:#EDE6D2; flex-shrink:0;
+    display:flex; flex-direction:column; padding:22px 0;
+  }
+  .brand{padding:0 18px 18px 18px; border-bottom:1px solid rgba(237,230,210,0.15); margin-bottom:10px;}
+  .brand .crest{
+    width:38px;height:38px;border-radius:50%;border:2px solid var(--gold);
+    display:flex;align-items:center;justify-content:center;font-family:'Lora',serif;
+    font-weight:700; color:var(--gold); font-size:15px; margin-bottom:8px;
+  }
+  .brand .name{font-family:'Lora',serif; font-size:14.5px; line-height:1.3; font-weight:600;}
+  .brand .sub{font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:#B7AE93; margin-top:4px;}
+  .nav-group{margin-top:14px;}
+  .nav-label{font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:#8F866D; padding:6px 18px;}
+  .nav-item{
+    display:flex; align-items:center; gap:10px; padding:9px 18px; cursor:pointer;
+    font-size:13.2px; color:#D9D2BC; border-left:3px solid transparent;
+  }
+  .nav-item:hover{background:rgba(255,255,255,0.05); color:#fff;}
+  .nav-item.active{background:rgba(184,135,58,0.15); border-left-color:var(--gold); color:#fff; font-weight:600;}
+  .nav-item .dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.6;}
+
+  /* Main */
+  .main{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .topbar{
+    background:var(--paper); border-bottom:1px solid var(--line); padding:14px 28px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .topbar h1{font-size:19px; margin:0; font-weight:600;}
+  .context-pills{display:flex; gap:8px; align-items:center;}
+  .pill-select{
+    font-family:'Inter',sans-serif; font-size:12.5px; padding:6px 10px; border-radius:var(--radius);
+    border:1px solid var(--line); background:var(--paper); color:var(--ink); font-weight:600;
+  }
+  .content{padding:26px 28px; overflow-y:auto; flex:1;}
+  .view{display:none;}
+  .view.active{display:block; animation:fade .18s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(3px);} to{opacity:1; transform:none;}}
+
+  /* Cards & grids */
+  .grid{display:grid; gap:16px;}
+  .grid.cols-4{grid-template-columns:repeat(4,1fr);}
+  .grid.cols-3{grid-template-columns:repeat(3,1fr);}
+  .grid.cols-2{grid-template-columns:repeat(2,1fr);}
+  @media(max-width:1000px){.grid.cols-4{grid-template-columns:repeat(2,1fr);}}
+
+  .card{
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    padding:18px;
+  }
+  .stat-card .label{font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); font-weight:600;}
+  .stat-card .value{font-family:'Lora',serif; font-size:30px; font-weight:700; color:var(--ink); margin-top:6px;}
+  .stat-card .sub{font-size:11.5px; color:var(--muted); margin-top:3px;}
+
+  .section-title{font-size:15px; font-weight:600; margin:0 0 14px 0; display:flex; align-items:center; justify-content:space-between;}
+  .section-title .hint{font-size:11.5px; color:var(--muted); font-weight:400;}
+
+  .quick-actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:18px;}
+  .qa-btn{
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    padding:10px 14px; font-size:12.5px; font-weight:600; color:var(--ink); cursor:pointer;
+    display:flex; align-items:center; gap:8px;
+  }
+  .qa-btn:hover{border-color:var(--gold); background:#FFFBF0;}
+
+  /* Buttons */
+  .btn{
+    font-family:'Inter',sans-serif; border:none; border-radius:var(--radius); padding:8px 14px;
+    font-size:12.8px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn-primary{background:var(--ink); color:#fff;}
+  .btn-primary:hover{background:var(--ink-2);}
+  .btn-gold{background:var(--gold); color:#fff;}
+  .btn-gold:hover{background:#a37830;}
+  .btn-outline{background:transparent; border:1px solid var(--line); color:var(--ink);}
+  .btn-outline:hover{border-color:var(--ink);}
+  .btn-danger{background:transparent; color:var(--red); border:1px solid transparent;}
+  .btn-danger:hover{background:#FBEDED;}
+  .btn-sm{padding:5px 9px; font-size:11.5px;}
+  .btn:disabled{opacity:.45; cursor:not-allowed;}
+
+  /* Table */
+  table{width:100%; border-collapse:collapse; font-size:12.8px;}
+  th{
+    text-align:left; font-size:10.6px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);
+    padding:8px 10px; border-bottom:1.5px solid var(--ink); font-weight:600;
+  }
+  td{padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tr:hover td{background:#FBF8EF;}
+  .table-wrap{overflow-x:auto;}
+  input[type=number].cell-input, input[type=text].cell-input{
+    width:56px; padding:4px 6px; border:1px solid var(--line); border-radius:2px; font-size:12.5px;
+    font-family:'JetBrains Mono',monospace; text-align:center;
+  }
+  select.cell-select{padding:4px 6px; border:1px solid var(--line); border-radius:2px; font-size:12px;}
+
+  .badge{display:inline-block; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:700;}
+  .badge.active{background:#E4F0E7; color:var(--green);}
+  .badge.inactive{background:#F1E9E9; color:var(--red);}
+  .badge.grade-good{background:#E4F0E7; color:var(--green);}
+  .badge.grade-mid{background:#FBF1DD; color:#8A6413;}
+  .badge.grade-low{background:#F6E4E3; color:var(--red);}
+
+  /* Form */
+  .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px 16px;}
+  .form-grid.cols-3{grid-template-columns:1fr 1fr 1fr;}
+  .field label{display:block; font-size:11.3px; font-weight:600; color:var(--muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:.04em;}
+  .field input, .field select, .field textarea{
+    width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius);
+    font-family:'Inter',sans-serif; font-size:13px; background:#fff;
+  }
+  .field textarea{resize:vertical; min-height:70px;}
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(27,42,74,0.45); display:none;
+    align-items:flex-start; justify-content:center; padding:40px 20px; overflow-y:auto; z-index:50;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--paper); border-radius:var(--radius); width:100%; max-width:640px; padding:24px; border:1px solid var(--line);}
+  .modal h3{margin:0 0 16px 0;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:18px;}
+
+  .check-grid{
+    display:grid; grid-template-columns:repeat(2, 1fr); gap:6px;
+    max-height:190px; overflow-y:auto; border:1px solid var(--line); border-radius:var(--radius); padding:8px;
+    background:#FCFAF3;
+  }
+  .check-grid.empty{display:block; padding:12px;}
+  .check-item{
+    display:flex; align-items:center; gap:7px; font-size:12.3px; padding:5px 7px; border-radius:2px; cursor:pointer;
+    line-height:1.25;
+  }
+  .check-item:hover{background:#F2EBD6;}
+  .check-item input{flex-shrink:0; margin:0; width:14px; height:14px; cursor:pointer;}
+  .check-item span{overflow-wrap:anywhere;}
+
+  .empty-state{padding:40px 20px; text-align:center; color:var(--muted);}
+  .empty-state .icon{font-size:26px; margin-bottom:8px;}
+
+  .toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:10px; flex-wrap:wrap;}
+  .search-input{padding:8px 12px; border:1px solid var(--line); border-radius:var(--radius); font-size:12.8px; width:220px;}
+
+  .warn-banner{
+    background:#FBF1DD; border:1px solid var(--gold-light); color:#7A5A15; padding:9px 13px;
+    border-radius:var(--radius); font-size:12px; margin-bottom:14px; display:flex; gap:8px; align-items:flex-start;
+  }
+
+  /* Report Card print styling — mirrors the school's printed template */
+  .report-card{
+    background:var(--paper); border:1.5px solid var(--ink); padding:20px 22px; max-width:800px; margin:0 auto;
+    font-family:'Inter',sans-serif; font-size:11px;
+  }
+  .rc-topbar{display:flex; align-items:center; gap:14px; border-bottom:2px solid var(--ink); padding-bottom:10px; margin-bottom:10px;}
+  .rc-topbar .crest{
+    width:56px;height:56px;border-radius:50%;border:2px solid var(--gold); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--gold); font-family:'Lora',serif;
+    object-fit:cover;
+  }
+  .rc-topbar .rc-school-block{text-align:center; flex:1; font-family:'Lora',serif;}
+  .rc-topbar .rc-school{font-size:17px; font-weight:700; letter-spacing:.02em;}
+  .rc-topbar .rc-report-title{font-size:14px; font-style:italic; font-weight:600; margin-top:1px;}
+  .rc-topbar .rc-year{font-size:11.5px; font-weight:600; margin-top:1px;}
+
+  .rc-info{width:100%; border-collapse:collapse; margin-bottom:0;}
+  .rc-info td{border:1px solid var(--ink); padding:4px 8px; vertical-align:middle; font-size:10.8px;}
+  .rc-info td i{font-style:italic; color:var(--text);}
+  .rc-info td b{font-weight:700; margin-left:3px;}
+  .rc-info tr.rc-note td{font-style:italic; font-size:9.8px; color:var(--muted);}
+
+  .rc-table{width:100%; border-collapse:collapse; font-size:10px; margin:10px 0 0 0;}
+  .rc-table th{border:1px solid var(--ink); padding:4px 5px; background:var(--gold-light); font-size:8.7px; text-transform:uppercase; text-align:center;}
+  .rc-table td{border:1px solid var(--ink); padding:3px 5px; text-align:center;}
+  .rc-table td.subj{text-align:left; font-weight:700; text-transform:uppercase; font-size:9.7px;}
+  .rc-table td.gkey{font-size:9px; text-align:left; color:var(--text);}
+  .rc-table td.gkey-num{font-weight:700; text-align:center;}
+  .rc-table tr.rc-agg td{font-size:10.5px; text-align:left; font-weight:600;}
+
+  .rc-pd{width:100%; border-collapse:collapse; margin-top:10px; font-size:10.3px;}
+  .rc-pd td{border:1px solid var(--ink); padding:4px 8px; vertical-align:middle;}
+  .rc-pd td.lbl{font-weight:700; width:15%; white-space:nowrap;}
+  .rc-pd td.val{width:22%;}
+  .rc-pd td.pdlbl{font-weight:600; width:16%;}
+  .rc-pd td.pdval{width:6%; text-align:center; font-weight:700;}
+  .rc-pd tr.pd-header td{background:var(--gold-light); font-weight:700; text-align:center; font-size:9px; text-transform:uppercase;}
+
+  .rc-sign-block{margin-top:10px; font-size:10.5px;}
+  .rc-sign-block .box-line{border:1px solid var(--ink); padding:14px 8px 4px 8px; margin-top:2px;}
+
+  .rc-actions{margin:16px 0 10px 0; display:flex; gap:8px; flex-wrap:wrap;}
+
+  .kbd-hint{font-size:11px; color:var(--muted); margin-top:16px;}
+  ::placeholder{color:#B6AC90;}
+</style>
+</head>
+<body>
+
+<!-- Shown before the app connects to a backend: asks for the server's address once. -->
+<div id="setupScreen" style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--parchment);">
+  <div class="card" style="max-width:420px; width:100%;">
+    <div style="text-align:center; margin-bottom:16px;">
+      <div class="crest" style="width:44px;height:44px;border-radius:50%;border:2px solid var(--gold); margin:0 auto 8px auto; display:flex; align-items:center; justify-content:center; font-family:'Lora',serif; font-weight:700; color:var(--gold);">DH</div>
+      <div style="font-family:'Lora',serif; font-weight:700; font-size:16px;">Connect to your school's backend</div>
+      <div style="font-size:12px; color:var(--muted); margin-top:4px;">Enter the web address where your backend is running.</div>
+    </div>
+    <div class="field">
+      <label>Backend address</label>
+      <input id="setupApiUrl" placeholder="e.g. http://localhost:4000 or https://your-app.onrender.com">
+    </div>
+    <div id="setupError" style="color:var(--red); font-size:12.5px; margin-top:8px; display:none;"></div>
+    <button class="btn btn-primary" style="width:100%; margin-top:14px; justify-content:center;" onclick="submitSetup()">Connect</button>
+    <div style="font-size:11px; color:var(--muted); margin-top:10px;">This is saved in this browser so you won't need to enter it again on this device.</div>
+  </div>
+</div>
+
+<!-- Shown once connected but not signed in. -->
+<div id="loginScreen" style="min-height:100vh; display:none; align-items:center; justify-content:center; background:var(--parchment);">
+  <div class="card" style="max-width:380px; width:100%;">
+    <div style="text-align:center; margin-bottom:16px;">
+      <div class="crest" style="width:44px;height:44px;border-radius:50%;border:2px solid var(--gold); margin:0 auto 8px auto; display:flex; align-items:center; justify-content:center; font-family:'Lora',serif; font-weight:700; color:var(--gold);">DH</div>
+      <div style="font-family:'Lora',serif; font-weight:700; font-size:16px;" id="loginSchoolName">Sign In</div>
+    </div>
+    <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username"></div>
+    <div class="field" style="margin-top:10px;"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter') submitLogin();"></div>
+    <div id="loginError" style="color:var(--red); font-size:12.5px; margin-top:8px; display:none;"></div>
+    <button class="btn btn-primary" style="width:100%; margin-top:14px; justify-content:center;" onclick="submitLogin()">Sign In</button>
+    <div style="font-size:11px; color:var(--muted); margin-top:12px; text-align:center;">
+      <a href="#" onclick="event.preventDefault(); resetSetup();" style="color:var(--muted);">Not your school? Change backend address</a>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="mainApp" style="display:none;">
+
+  <div class="sidebar">
+    <div class="brand">
+      <div class="crest">DH</div>
+      <div class="name" id="brandSchoolName">Divine Healer's<br>Basic School</div>
+      <div class="sub">Academic Records</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Overview</div>
+      <div class="nav-item active" data-view="dashboard"><span class="dot"></span>Dashboard</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">People</div>
+      <div class="nav-item" data-view="students"><span class="dot"></span>Students</div>
+      <div class="nav-item" data-view="teachers"><span class="dot"></span>Teachers</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Academics</div>
+      <div class="nav-item" data-view="classes"><span class="dot"></span>Classes</div>
+      <div class="nav-item" data-view="subjects"><span class="dot"></span>Subjects</div>
+      <div class="nav-item" data-view="scores"><span class="dot"></span>Score Entry</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Output</div>
+      <div class="nav-item" data-view="reports"><span class="dot"></span>Reports</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">System</div>
+      <div class="nav-item" data-view="settings"><span class="dot"></span>Settings</div>
+      <div class="nav-item" data-view="audit"><span class="dot"></span>Audit Log</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <h1 id="viewTitle">Dashboard</h1>
+      <div class="context-pills">
+        <span id="saveStatus" style="font-size:11px; color:var(--muted); margin-right:4px;"></span>
+        <button class="pill-select" id="identityBadge" style="cursor:pointer; font-weight:600;" onclick="openAccountMenu()">Not signed in</button>
+        <select class="pill-select" id="ctxYear"></select>
+        <select class="pill-select" id="ctxTerm">
+          <option>First Term</option><option>Second Term</option><option>Third Term</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="view active" id="view-dashboard">
+        <div class="grid cols-4">
+          <div class="card stat-card"><div class="label">Students</div><div class="value" id="statStudents">0</div><div class="sub">Active enrolment</div></div>
+          <div class="card stat-card"><div class="label">Classes</div><div class="value" id="statClasses">0</div><div class="sub">Configured</div></div>
+          <div class="card stat-card"><div class="label">Teachers</div><div class="value" id="statTeachers">0</div><div class="sub">On record</div></div>
+          <div class="card stat-card"><div class="label">Reports Ready</div><div class="value" id="statReports">0</div><div class="sub" id="statReportsSub">for current term</div></div>
+        </div>
+
+        <div class="section-title" style="margin-top:22px;">Quick actions</div>
+        <div class="quick-actions">
+          <div class="qa-btn" data-goto="students" data-action="add">+ Add Student</div>
+          <div class="qa-btn" data-goto="scores">Enter Scores</div>
+          <div class="qa-btn" data-goto="reports">Generate Reports</div>
+          <div class="qa-btn" data-goto="teachers" data-action="add">Manage Teachers</div>
+          <div class="qa-btn" data-goto="classes" data-action="add">Manage Classes</div>
+        </div>
+
+        <div class="section-title" style="margin-top:26px;">Class snapshot — current term</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Class</th><th>Teacher</th><th>On Roll</th><th>Avg. Score</th><th>Reports Complete</th></tr></thead>
+            <tbody id="dashClassTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- STUDENTS -->
+      <div class="view" id="view-students">
+        <div class="toolbar">
+          <input class="search-input" id="studentSearch" placeholder="Search student…">
+          <div style="display:flex; gap:8px;">
+            <select class="pill-select" id="studentClassFilter"><option value="">All classes</option></select>
+            <button class="btn btn-outline" onclick="exportStudentsCSV()">Export CSV</button>
+            <button class="btn btn-primary" id="btnAddStudent">+ Add Student</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Adm. No</th><th>Name</th><th>Gender</th><th>Class</th><th>Guardian</th><th>Phone</th><th>Status</th><th></th></tr></thead>
+            <tbody id="studentTable"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="studentEmpty" style="display:none;">
+          <div class="icon">◇</div>No students yet. Add your first student to get started.
+        </div>
+      </div>
+
+      <!-- TEACHERS -->
+      <div class="view" id="view-teachers">
+        <div class="toolbar">
+          <div></div>
+          <button class="btn btn-primary" id="btnAddTeacher">+ Add Teacher</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Phone</th><th>Subjects</th><th>Classes</th><th></th></tr></thead>
+            <tbody id="teacherTable"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="teacherEmpty" style="display:none;">
+          <div class="icon">◇</div>No teachers on record yet.
+        </div>
+      </div>
+
+      <!-- CLASSES -->
+      <div class="view" id="view-classes">
+        <div class="toolbar">
+          <div></div>
+          <button class="btn btn-primary" id="btnAddClass">+ Add Class</button>
+        </div>
+        <div class="grid cols-3" id="classCards"></div>
+        <div class="empty-state" id="classEmpty" style="display:none;">
+          <div class="icon">◇</div>No classes yet.
+        </div>
+      </div>
+
+      <!-- SUBJECTS -->
+      <div class="view" id="view-subjects">
+        <div class="toolbar">
+          <div></div>
+          <button class="btn btn-primary" id="btnAddSubject">+ Add Subject</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Subject</th><th>Assigned to classes</th><th>Counts toward aggregate</th><th></th></tr></thead>
+            <tbody id="subjectTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SCORES -->
+      <div class="view" id="view-scores">
+        <div class="toolbar">
+          <select class="pill-select" id="scoreClassSelect"><option value="">Select a class…</option></select>
+          <div style="font-size:11.5px; color:var(--muted);">Grades and totals calculate automatically as you type.</div>
+        </div>
+        <div id="scoreArea"></div>
+      </div>
+
+      <!-- REPORTS -->
+      <div class="view" id="view-reports">
+        <div class="toolbar">
+          <select class="pill-select" id="reportClassSelect"><option value="">Select a class…</option></select>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-outline" id="btnExportResults">Export Results CSV</button>
+            <button class="btn btn-gold" id="btnGenerateClass">Generate All Reports for Class</button>
+          </div>
+        </div>
+        <div id="reportList"></div>
+        <div id="reportPreview"></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="view" id="view-settings">
+        <div class="grid cols-2">
+          <div class="card">
+            <div class="section-title">School information</div>
+            <div class="form-grid" id="settingsForm"></div>
+            <div style="margin-top:14px;"><button class="btn btn-primary" id="btnSaveSettings">Save Settings</button></div>
+          </div>
+          <div class="card">
+            <div class="section-title">Grading scheme <span class="hint">score → grade → remark</span></div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Min</th><th>Max</th><th>Grade</th><th>Remark</th></tr></thead>
+              <tbody id="gradeSchemeTable"></tbody>
+            </table></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="section-title">Academic years</div>
+          <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;">
+            <div class="field" style="width:200px;"><label>Add academic year</label><input id="newYearInput" placeholder="e.g. 2026-2027"></div>
+            <button class="btn btn-outline btn-sm" id="btnAddYear">+ Add</button>
+          </div>
+          <div style="margin-top:10px; font-size:12.5px;" id="yearList"></div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="section-title">Term details <span class="hint" id="termInfoHint">for current term — used on printed reports</span></div>
+          <div class="form-grid cols-3" id="termInfoForm"></div>
+          <div style="margin-top:14px;"><button class="btn btn-primary" id="btnSaveTermInfo">Save Term Details</button></div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="section-title">User accounts <span class="hint">manage who can sign in</span></div>
+          <p style="font-size:12.2px; color:var(--muted); margin-top:-4px;">Real logins are managed by your backend now — each person signs in with their own email and password, and only an Administrator or a class's assigned teacher can enter that class's scores. This is enforced on the server, not in this browser.</p>
+          <div class="table-wrap" style="margin-top:10px;"><table>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
+            <tbody id="userAccountsTable"></tbody>
+          </table></div>
+          <div style="margin-top:14px; display:flex; gap:8px;">
+            <button class="btn btn-primary" onclick="openCreateUserModal()">+ Create Login</button>
+            <button class="btn btn-outline" onclick="openChangePasswordModal()">Change My Password</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AUDIT LOG -->
+      <div class="view" id="view-audit">
+        <div class="toolbar">
+          <div style="font-size:11.5px; color:var(--muted);">A server-side record of changes — who changed what, and when. Administrators only.</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th style="width:180px;">When</th><th>By</th><th>Change</th></tr></thead>
+            <tbody id="auditTable"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="auditEmpty" style="display:none;">
+          <div class="icon">◇</div>No changes recorded yet.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Generic Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalBody"></div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------
+   API CONNECTION — everything below talks to your backend over the
+   network. Nothing is saved in this browser except the backend's
+   address and your login token, both in localStorage on this device.
+--------------------------------------------------------------- */
+const DEFAULT_GRADING = [
+  {min:90,max:100,grade:'1',remark:'Distinction'},
+  {min:80,max:89,grade:'2',remark:'Excellent'},
+  {min:70,max:79,grade:'3',remark:'Very Good'},
+  {min:60,max:69,grade:'4',remark:'Good'},
+  {min:55,max:59,grade:'5',remark:'Credit'},
+  {min:50,max:54,grade:'6',remark:'Pass'},
+  {min:40,max:49,grade:'7',remark:'Weak Pass'},
+  {min:35,max:39,grade:'8',remark:'Weak'},
+  {min:0,max:34,grade:'9',remark:'Very Weak'},
+];
+
+let DB = {
+  settings: { schoolName: '', address: '', poBox: '', phone: '', email: '', motto: '', headmaster: '',
+    currentYear: '', currentTerm: 'First Term', years: [], grading: DEFAULT_GRADING },
+  students: [], teachers: [], classes: [], subjects: [],
+  scores: {},      // key `${year}|${term}|${classId}` -> { [studentId]: { [subjectId]: {sba, exam} } } — reshaped from the API for reuse in the existing render code
+  scoreEditable: {}, // key `${year}|${term}|${classId}` -> bool, from the API's "editable" flag (the real, server-enforced permission)
+  remarks: {},
+  termInfo: {},
+  auditLog: [],
+};
+
+// --- Local device storage: just the backend address + login token, nothing else. ---
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){ /* private browsing etc. — session still works, just won't persist */ } }
+function lsRemove(k){ try{ localStorage.removeItem(k); }catch(e){} }
+
+let API_BASE = lsGet('sms-api-base') || '';
+let AUTH_TOKEN = lsGet('sms-token') || '';
+let CURRENT_USER = null; // {id, name, email, role} — set after a successful login
+
+function uid(prefix){ return prefix + '_' + Math.random().toString(36).slice(2,9); }
+
+// Every network call goes through here. Throws with a readable message on any failure —
+// callers show it with customAlert() rather than failing silently.
+async function api(path, options = {}){
+  let res;
+  try{
+    res = await fetch(API_BASE + path, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(AUTH_TOKEN ? { Authorization: 'Bearer ' + AUTH_TOKEN } : {}),
+        ...(options.headers || {}),
+      },
+    });
+  }catch(e){
+    throw new Error(`Couldn't reach the backend at ${API_BASE}. Check it's running and the address is correct.`);
+  }
+  if(res.status === 401){
+    // Session expired or invalid — send back to the login screen rather than failing silently.
+    AUTH_TOKEN = ''; CURRENT_USER = null; lsRemove('sms-token');
+    showLoginScreen();
+    throw new Error('Your session expired. Please sign in again.');
+  }
+  let body = null;
+  try{ body = await res.json(); }catch(e){ /* empty body, fine for some endpoints */ }
+  if(!res.ok){
+    throw new Error((body && body.error) || `Request failed (${res.status}).`);
+  }
+  return body;
+}
+
+function logAudit(){ /* audit entries are now written server-side on every mutating request — nothing to do here */ }
+
+// Shrink an uploaded photo to a small square JPEG before it's sent to the backend —
+// keeps requests small and fast on a modest school internet connection.
+function resizeImageFile(file, maxDim=220, quality=0.72){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function setSaveStatus(state, detail){
+  const el = document.getElementById('saveStatus');
+  if(!el) return;
+  if(state==='saving'){ el.textContent = 'Saving…'; el.style.color = 'var(--muted)'; }
+  else if(state==='saved'){ el.textContent = 'Saved'; el.style.color = 'var(--green)'; setTimeout(()=>{ if(el.textContent==='Saved') el.textContent=''; }, 2000); }
+  else if(state==='error'){ el.textContent = detail || 'Save failed'; el.style.color = 'var(--red)'; el.title = detail||''; }
+  else { el.textContent = ''; }
+}
+
+/* ---------------------------------------------------------------
+   SETUP (backend address) + LOGIN
+--------------------------------------------------------------- */
+function showSetupScreen(){
+  document.getElementById('setupScreen').style.display = 'flex';
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'none';
+}
+function showLoginScreen(){
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('loginSchoolName').textContent = DB.settings.schoolName || 'Sign In';
+}
+function showMainApp(){
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'flex';
+}
+function resetSetup(){
+  API_BASE = ''; AUTH_TOKEN = ''; CURRENT_USER = null;
+  lsRemove('sms-api-base'); lsRemove('sms-token');
+  document.getElementById('setupApiUrl').value = '';
+  showSetupScreen();
+}
+async function submitSetup(){
+  let url = document.getElementById('setupApiUrl').value.trim().replace(/\/+$/, '');
+  const errEl = document.getElementById('setupError');
+  errEl.style.display = 'none';
+  if(!url){ errEl.textContent = 'Enter the backend address.'; errEl.style.display = 'block'; return; }
+  if(!/^https?:\/\//i.test(url)) url = 'http://' + url;
+  try{
+    const res = await fetch(url + '/api/health');
+    if(!res.ok) throw new Error();
+  }catch(e){
+    errEl.textContent = "Couldn't reach that address. Check the backend is running and the URL is correct.";
+    errEl.style.display = 'block';
+    return;
+  }
+  API_BASE = url;
+  lsSet('sms-api-base', url);
+  showLoginScreen();
+}
+async function submitLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  if(!email || !password){ errEl.textContent = 'Enter your email and password.'; errEl.style.display = 'block'; return; }
+  try{
+    const data = await api('/api/auth/login', { method:'POST', body: JSON.stringify({ email, password }) });
+    AUTH_TOKEN = data.token;
+    CURRENT_USER = data.user;
+    lsSet('sms-token', AUTH_TOKEN);
+    await bootApp();
+  }catch(e){
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+}
+function signOut(){
+  AUTH_TOKEN = ''; CURRENT_USER = null;
+  lsRemove('sms-token');
+  showLoginScreen();
+}
+function openAccountMenu(){
+  if(!CURRENT_USER) return;
+  customConfirm(`Signed in as ${CURRENT_USER.name} (${CURRENT_USER.role === 'admin' ? 'Administrator' : 'Teacher'}).\n\nSign out?`, signOut);
+}
+function renderIdentityBadge(){
+  const el = document.getElementById('identityBadge');
+  if(!el || !CURRENT_USER) return;
+  el.textContent = `${CURRENT_USER.name} (${CURRENT_USER.role === 'admin' ? 'Admin' : 'Teacher'})`;
+  el.style.color = 'var(--ink)';
+}
+
+/* ---------------------------------------------------------------
+   LOADING DATA FROM THE BACKEND
+   Reshapes API responses into the same DB.* shapes the rest of this
+   app already renders from, so the view code below barely changes.
+--------------------------------------------------------------- */
+// IDs come back from the API as numbers, but everywhere in this app's existing render code
+// compares IDs with === after they've passed through an HTML attribute (which stringifies
+// them). Rather than touch every comparison, normalize every ID to a string right here, once,
+// as data enters the app. (SQLite matches a string parameter against an INTEGER column fine,
+// so sending these same string IDs back to the API on writes works without any conversion.)
+function normId(v){ return (v===null || v===undefined) ? '' : String(v); }
+
+async function loadCoreData(){
+  const [settings, years, grading, teachers, classes, subjects, students] = await Promise.all([
+    api('/api/settings'),
+    api('/api/settings/years'),
+    api('/api/settings/grading'),
+    api('/api/teachers'),
+    api('/api/classes'),
+    api('/api/subjects'),
+    api('/api/students'),
+  ]);
+  DB.settings.schoolName = settings.schoolName || '';
+  DB.settings.address = settings.address || '';
+  DB.settings.poBox = settings.poBox || '';
+  DB.settings.phone = settings.phone || '';
+  DB.settings.email = settings.email || '';
+  DB.settings.motto = settings.motto || '';
+  DB.settings.headmaster = settings.headmaster || '';
+  if(!DB.settings.currentYear) DB.settings.currentYear = settings.currentYear || (years[0] || '');
+  if(!DB.settings.currentTerm) DB.settings.currentTerm = settings.currentTerm || 'First Term';
+  DB.settings.years = years.length ? years : (settings.currentYear ? [settings.currentYear] : []);
+  DB.settings.grading = grading.length ? grading : DEFAULT_GRADING;
+  DB.teachers = teachers.map(t=>({ ...t, id: normId(t.id), subjectIds: (t.subjectIds||[]).map(normId), classIds: (t.classIds||[]).map(normId) }));
+  DB.classes = classes.map(c=>({ ...c, id: normId(c.id), teacherId: normId(c.teacherId), subjectIds: (c.subjectIds||[]).map(normId) }));
+  DB.subjects = subjects.map(s=>({ ...s, id: normId(s.id), classIds: (s.classIds||[]).map(normId) }));
+  DB.students = students.map(s=>({ ...s, id: normId(s.id), classId: normId(s.classId) }));
+  if(typeof invalidateDashboardScoreCache === 'function') invalidateDashboardScoreCache();
+}
+async function loadTermContextData(){
+  const { year, term } = { year: DB.settings.currentYear, term: DB.settings.currentTerm };
+  if(!year) return;
+  try{
+    const ti = await api(`/api/settings/term-info?year=${encodeURIComponent(year)}&term=${encodeURIComponent(term)}`);
+    DB.termInfo[ctxKey()] = ti;
+  }catch(e){ /* non-fatal — term info is optional */ }
+}
+async function loadScoresForClass(classId){
+  const { year, term } = { year: DB.settings.currentYear, term: DB.settings.currentTerm };
+  const data = await api(`/api/scores?year=${encodeURIComponent(year)}&term=${encodeURIComponent(term)}&classId=${classId}`);
+  const key = scoreKey(classId);
+  const nested = {};
+  data.scores.forEach(s=>{
+    const stu = normId(s.studentId), sub = normId(s.subjectId);
+    nested[stu] = nested[stu] || {};
+    nested[stu][sub] = { sba: s.sba ?? '', exam: s.exam ?? '' };
+  });
+  DB.scores[key] = nested;
+  DB.scoreEditable[key] = data.editable;
+}
+async function loadRemark(studentId){
+  const { year, term } = { year: DB.settings.currentYear, term: DB.settings.currentTerm };
+  const data = await api(`/api/remarks/${studentId}?year=${encodeURIComponent(year)}&term=${encodeURIComponent(term)}`);
+  DB.remarks[remarkKey(studentId)] = Object.keys(data).length ? data : defaultRemark();
+}
+async function loadAuditLog(){
+  if(!CURRENT_USER || CURRENT_USER.role !== 'admin'){ DB.auditLog = []; return; }
+  try{ DB.auditLog = await api('/api/audit-log?limit=200'); }
+  catch(e){ DB.auditLog = []; }
+}
+
+async function bootApp(){
+  try{
+    await loadCoreData();
+    await loadTermContextData();
+    await loadAuditLog();
+  }catch(e){
+    customAlert(e.message);
+    if(!CURRENT_USER){ showLoginScreen(); return; }
+  }
+  showMainApp();
+  renderAll();
+}
+
+/* ---------------------------------------------------------------
+   HELPERS
+--------------------------------------------------------------- */
+function gradeFor(score){
+  const g = DB.settings.grading.find(g=>score>=g.min && score<=g.max);
+  return g || {grade:'-', remark:'-'};
+}
+function gradeBadgeClass(gradeStr){
+  const n = parseInt(gradeStr,10);
+  if(isNaN(n)) return 'grade-mid';
+  if(n<=3) return 'grade-good';
+  if(n<=6) return 'grade-mid';
+  return 'grade-low';
+}
+function csvCell(v){
+  const s = (v===undefined||v===null)? '' : String(v);
+  return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
+function downloadCSV(filename, rowsArr){
+  const csv = rowsArr.map(row=>row.map(csvCell).join(',')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function exportStudentsCSV(){
+  const filterClass = document.getElementById('studentClassFilter').value;
+  const list = DB.students.filter(s=> !filterClass || s.classId===filterClass);
+  const rows = [['Admission No','Name','Gender','Class','House','Guardian Name','Guardian Phone','Address','Status']];
+  list.forEach(s=>rows.push([s.admissionNo, s.name, s.gender, (classById(s.classId)||{}).name||'', s.house, s.guardianName, s.guardianPhone, s.address, s.status||'Active']));
+  downloadCSV('students.csv', rows);
+}
+function exportScoreSheetCSV(classId){
+  const cls = classById(classId);
+  const subs = subjectsForClass(classId);
+  const results = computeClassResults(classId);
+  const rollCount = studentsInClass(classId).length;
+  const head = ['Student'];
+  subs.forEach(s=>{ head.push(s.name+' SBA', s.name+' Exam', s.name+' Total'); });
+  head.push('Overall Total','Average','Position');
+  const rows = [head];
+  results.forEach(r=>{
+    const row = [r.student.name];
+    r.subjectRows.forEach(sr=>row.push(sr.sba, sr.exam, sr.total));
+    row.push(r.total, r.count? r.avg.toFixed(1):'', r.count? `${r.rank}/${rollCount}`:'');
+    rows.push(row);
+  });
+  downloadCSV(`${cls.name}-scores-${DB.settings.currentTerm}-${DB.settings.currentYear}.csv`.replace(/\s+/g,'_'), rows);
+}
+function exportClassResultsCSV(classId){
+  const cls = classById(classId);
+  const results = computeClassResults(classId);
+  const rollCount = studentsInClass(classId).length;
+  const rows = [['Student','Admission No','Total','Average','Position']];
+  results.forEach(r=>rows.push([r.student.name, r.student.admissionNo, r.total, r.count?r.avg.toFixed(1):'', r.count?`${r.rank}/${rollCount}`:'']));
+  downloadCSV(`${cls.name}-results-${DB.settings.currentTerm}-${DB.settings.currentYear}.csv`.replace(/\s+/g,'_'), rows);
+}
+function ctxKey(){ return `${DB.settings.currentYear}|${DB.settings.currentTerm}`; }
+function remarkKey(studentId){ return `${ctxKey()}|${studentId}`; }
+function defaultRemark(){
+  return {attendancePresent:'', billArrears:'', totalBills:'', conduct:'', attitude:'', interest:'',
+    classTeacherRemarks:'', headmasterRemarks:'',
+    pd:{neatness:'',concentration:'',sociability:'',classParticipation:'',conversation:'',workEthics:'',punctuality:'',courtesy:''}};
+}
+function getRemark(studentId){
+  return DB.remarks[remarkKey(studentId)] || defaultRemark();
+}
+function getTermInfo(){
+  const t = DB.termInfo[ctxKey()];
+  return t || {totalSchoolDays:'', dateOfIssue:'', nextTermBegins:'', nextTermTuitionFee:'', headmasterContact:''};
+}
+function computeAggregate(subjectRows){
+  // Ghanaian-style aggregate: sum of numeric grades for the best 6 subjects (lower total = better)
+  const nums = subjectRows.map(r=>parseInt(r.grade,10)).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
+  if(!nums.length) return '';
+  const best = nums.slice(0, Math.min(6, nums.length));
+  return best.reduce((a,b)=>a+b, 0);
+}
+function scoreKey(classId){ return `${ctxKey()}|${classId}`; }
+function classById(id){ return DB.classes.find(c=>c.id===id); }
+function teacherById(id){ return DB.teachers.find(t=>t.id===id); }
+function subjectsForClass(classId){ return DB.subjects.filter(s=>(s.classIds||[]).includes(classId)); }
+function studentsInClass(classId){ return DB.students.filter(s=>s.classId===classId && s.status!=='Inactive'); }
+function esc(str){ return (str||'').toString().replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function checkGrid(items, cls, selectedIds, emptyMsg){
+  if(!items.length) return `<div class="check-grid empty"><span style="color:var(--muted); font-size:12px;">${emptyMsg}</span></div>`;
+  const boxes = items.map(item=>`<label class="check-item">
+    <input type="checkbox" class="${cls}" value="${item.id}" ${selectedIds.includes(item.id)?'checked':''}><span>${esc(item.name)}</span>
+  </label>`).join('');
+  return `<div class="check-grid">${boxes}</div>`;
+}
+
+function computeClassResults(classId){
+  const subs = subjectsForClass(classId);
+  const students = studentsInClass(classId);
+  const key = scoreKey(classId);
+  const classScores = DB.scores[key] || {};
+  const results = students.map(st=>{
+    const stScores = classScores[st.id] || {};
+    let total=0, count=0;
+    const subjectRows = subs.map(sub=>{
+      const sc = stScores[sub.id] || {};
+      const sba = Number(sc.sba)||0, exam = Number(sc.exam)||0;
+      const t = sba+exam;
+      if(sc.sba!==undefined && sc.sba!=='' || sc.exam!==undefined && sc.exam!==''){ total+=t; count++; }
+      const g = gradeFor(t);
+      return {subjectId:sub.id, sba, exam, total:t, grade:g.grade, remark:g.remark};
+    });
+    const avg = count? (total/count) : 0;
+    return {student:st, subjectRows, total, avg, count};
+  });
+  // rank by average (ties handled)
+  const sorted = [...results].sort((a,b)=>b.avg-a.avg);
+  let lastAvg=null, lastRank=0;
+  sorted.forEach((r,i)=>{
+    if(r.avg===lastAvg){ r.rank = lastRank; }
+    else { r.rank = i+1; lastRank = i+1; lastAvg = r.avg; }
+  });
+  // subject-level ranks
+  subs.forEach(sub=>{
+    const withScores = results.map(r=>({sid:r.student.id, row:r.subjectRows.find(x=>x.subjectId===sub.id)}))
+      .sort((a,b)=>b.row.total-a.row.total);
+    let last=null, rank=0;
+    withScores.forEach((x,i)=>{
+      if(x.row.total===last){ x.row.rank=rank; }
+      else { x.row.rank=i+1; rank=i+1; last=x.row.total; }
+    });
+  });
+  return results;
+}
+
+/* ---------------------------------------------------------------
+   NAVIGATION
+--------------------------------------------------------------- */
+const titles = {dashboard:'Dashboard', students:'Students', teachers:'Teachers', classes:'Classes',
+  subjects:'Subjects', scores:'Score Entry', reports:'Report Generation', settings:'Settings', audit:'Audit Log'};
+
+function goto(view){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===view));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+view));
+  document.getElementById('viewTitle').textContent = titles[view];
+  renderAll();
+}
+document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click', ()=>goto(n.dataset.view)));
+document.querySelectorAll('.qa-btn').forEach(b=>b.addEventListener('click', ()=>{
+  goto(b.dataset.goto);
+  if(b.dataset.action==='add'){
+    if(b.dataset.goto==='students') openStudentModal();
+    if(b.dataset.goto==='teachers') openTeacherModal();
+    if(b.dataset.goto==='classes') openClassModal();
+  }
+}));
+
+/* ---------------------------------------------------------------
+   MODAL
+--------------------------------------------------------------- */
+function openModal(html){
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
+document.getElementById('modalOverlay').addEventListener('click', e=>{ if(e.target.id==='modalOverlay') closeModal(); });
+
+// Custom confirm/alert dialogs — native window.confirm()/alert() are blocked or auto-dismissed
+// in many embedded/sandboxed viewers, which made destructive actions silently do nothing.
+let __confirmCallback = null;
+function customConfirm(message, onYes){
+  __confirmCallback = onYes;
+  openModal(`
+    <h3>Please confirm</h3>
+    <p style="font-size:13.5px; white-space:pre-line; color:var(--text); line-height:1.5;">${esc(message)}</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" style="background:var(--red);" onclick="__runConfirm()">Yes, continue</button>
+    </div>
+  `);
+}
+function __runConfirm(){
+  const cb = __confirmCallback;
+  __confirmCallback = null;
+  closeModal();
+  if(cb) cb();
+}
+function customAlert(message){
+  openModal(`
+    <h3>Notice</h3>
+    <p style="font-size:13.5px; white-space:pre-line; color:var(--text); line-height:1.5;">${esc(message)}</p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="closeModal()">OK</button>
+    </div>
+  `);
+}
+
+/* ---------------------------------------------------------------
+   SCORE-EDIT PERMISSION — reads the flag the backend already computed
+   when scores were fetched. The real check happens server-side; this
+   is just what drives the read-only UI here.
+--------------------------------------------------------------- */
+function canEditScores(classId){
+  return !!DB.scoreEditable[scoreKey(classId)];
+}
+
+/* ---------------------------------------------------------------
+   CONTEXT (year/term) SELECTORS
+--------------------------------------------------------------- */
+function renderContextSelectors(){
+  const yearSel = document.getElementById('ctxYear');
+  yearSel.innerHTML = DB.settings.years.map(y=>`<option value="${esc(y)}" ${y===DB.settings.currentYear?'selected':''}>${esc(y)}</option>`).join('');
+  document.getElementById('ctxTerm').value = DB.settings.currentTerm;
+}
+async function onContextChange(){
+  invalidateDashboardScoreCache();
+  DB.scores = {}; DB.scoreEditable = {}; // stale for the old term/year — force reload per class as needed
+  await loadTermContextData();
+  await loadAuditLog();
+  renderAll();
+}
+document.getElementById('ctxYear').addEventListener('change', e=>{ DB.settings.currentYear = e.target.value; onContextChange(); });
+document.getElementById('ctxTerm').addEventListener('change', e=>{ DB.settings.currentTerm = e.target.value; onContextChange(); });
+
+/* ---------------------------------------------------------------
+   DASHBOARD
+--------------------------------------------------------------- */
+let __dashboardScoresLoaded = false;
+function invalidateDashboardScoreCache(){ __dashboardScoresLoaded = false; }
+async function ensureDashboardScoresLoaded(){
+  if(__dashboardScoresLoaded) return;
+  __dashboardScoresLoaded = true;
+  try{
+    await Promise.all(DB.classes.map(c=>loadScoresForClass(c.id).catch(()=>{})));
+  }catch(e){ /* best-effort — dashboard just shows what it has */ }
+  if(document.getElementById('view-dashboard').classList.contains('active')) renderDashboard();
+}
+function renderDashboard(){
+  // Scores for classes the user hasn't opened yet aren't loaded locally — fetch them in the
+  // background (once per context) and this re-renders itself when they arrive, so the
+  // averages/completion column don't stay blank.
+  ensureDashboardScoresLoaded();
+
+  const warnings = [];
+  const unassigned = DB.classes.filter(c=>!c.teacherId);
+  if(unassigned.length) warnings.push(`${unassigned.length} class(es) have no class teacher assigned: ${unassigned.map(c=>esc(c.name)).join(', ')}.`);
+  if(!DB.settings.headmaster) warnings.push(`Headmaster's name is not set — add it in Settings before generating reports.`);
+  const existing = document.getElementById('dashWarnBanner');
+  if(existing) existing.remove();
+  if(warnings.length){
+    const banner = document.createElement('div');
+    banner.className = 'warn-banner'; banner.id = 'dashWarnBanner';
+    banner.innerHTML = `<div>⚠</div><div>${warnings.join('<br>')}</div>`;
+    document.querySelector('#view-dashboard .grid.cols-4').insertAdjacentElement('beforebegin', banner);
+  }
+  document.getElementById('statStudents').textContent = DB.students.filter(s=>s.status!=='Inactive').length;
+  document.getElementById('statClasses').textContent = DB.classes.length;
+  document.getElementById('statTeachers').textContent = DB.teachers.length;
+
+  let completed=0;
+  const rows = DB.classes.map(c=>{
+    const results = computeClassResults(c.id);
+    const withScores = results.filter(r=>r.count>0);
+    const avg = withScores.length? (withScores.reduce((s,r)=>s+r.avg,0)/withScores.length) : 0;
+    const complete = results.length && results.every(r=>r.count===subjectsForClass(c.id).length && subjectsForClass(c.id).length>0);
+    if(complete) completed++;
+    const teacher = teacherById(c.teacherId);
+    return `<tr>
+      <td>${esc(c.name)}</td>
+      <td>${teacher?esc(teacher.name):'<span style="color:var(--red)">Unassigned</span>'}</td>
+      <td>${studentsInClass(c.id).length}</td>
+      <td>${withScores.length? avg.toFixed(1)+'%':'—'}</td>
+      <td>${complete? '<span class="badge active">Complete</span>' : '<span class="badge inactive">Pending</span>'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('dashClassTable').innerHTML = rows || `<tr><td colspan="5" style="color:var(--muted); text-align:center; padding:20px;">No classes configured yet.</td></tr>`;
+  document.getElementById('statReports').textContent = completed;
+  document.getElementById('statReportsSub').textContent = `of ${DB.classes.length} classes ready — ${DB.settings.currentTerm}`;
+}
+
+/* ---------------------------------------------------------------
+   STUDENTS
+--------------------------------------------------------------- */
+function renderStudentClassFilterOptions(){
+  const opts = `<option value="">All classes</option>` + DB.classes.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  document.getElementById('studentClassFilter').innerHTML = opts;
+}
+function renderStudents(){
+  renderStudentClassFilterOptions();
+  const search = document.getElementById('studentSearch').value.toLowerCase();
+  const filterClass = document.getElementById('studentClassFilter').value;
+  let list = DB.students.filter(s=>{
+    if(filterClass && s.classId!==filterClass) return false;
+    if(search && !s.name.toLowerCase().includes(search) && !(s.admissionNo||'').toLowerCase().includes(search)) return false;
+    return true;
+  });
+  document.getElementById('studentEmpty').style.display = DB.students.length? 'none':'block';
+  document.getElementById('studentTable').innerHTML = list.map(s=>{
+    const cls = classById(s.classId);
+    const avatar = s.photo
+      ? `<img src="${s.photo}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:7px;">`
+      : `<span style="display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--gold-light);color:var(--ink);align-items:center;justify-content:center;font-size:10.5px;font-weight:700;vertical-align:middle;margin-right:7px;">${esc((s.name||'?').trim().charAt(0).toUpperCase())}</span>`;
+    return `<tr>
+      <td>${esc(s.admissionNo)}</td>
+      <td>${avatar}${esc(s.name)}</td>
+      <td>${esc(s.gender)}</td>
+      <td>${cls? esc(cls.name):'—'}</td>
+      <td>${esc(s.guardianName)}</td>
+      <td>${esc(s.guardianPhone)}</td>
+      <td><span class="badge ${s.status==='Inactive'?'inactive':'active'}">${esc(s.status||'Active')}</span></td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-outline btn-sm" onclick="openStudentModal('${s.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">Remove</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+document.getElementById('studentSearch').addEventListener('input', renderStudents);
+document.getElementById('studentClassFilter').addEventListener('change', renderStudents);
+document.getElementById('btnAddStudent').addEventListener('click', ()=>openStudentModal());
+
+function openStudentModal(id){
+  const s = id? DB.students.find(x=>x.id===id) : {};
+  const classOpts = DB.classes.map(c=>`<option value="${c.id}" ${s.classId===c.id?'selected':''}>${esc(c.name)}</option>`).join('');
+  openModal(`
+    <h3>${id?'Edit':'Add'} Student</h3>
+    <div class="form-grid">
+      <div class="field"><label>Admission No.</label><input id="f_admissionNo" value="${esc(s.admissionNo)}"></div>
+      <div class="field"><label>Full Name</label><input id="f_name" value="${esc(s.name)}"></div>
+      <div class="field"><label>Gender</label><select id="f_gender">
+        <option ${s.gender==='Male'?'selected':''}>Male</option><option ${s.gender==='Female'?'selected':''}>Female</option>
+      </select></div>
+      <div class="field"><label>Date of Birth</label><input type="date" id="f_dob" value="${s.dob||''}"></div>
+      <div class="field"><label>Class</label><select id="f_classId"><option value="">— none —</option>${classOpts}</select></div>
+      <div class="field"><label>House</label><input id="f_house" value="${esc(s.house)}"></div>
+      <div class="field"><label>Guardian Name</label><input id="f_guardianName" value="${esc(s.guardianName)}"></div>
+      <div class="field"><label>Guardian Phone</label><input id="f_guardianPhone" value="${esc(s.guardianPhone)}" placeholder="e.g. 233241234567"></div>
+      <div class="field" style="grid-column:1/-1;"><label>Address</label><input id="f_address" value="${esc(s.address)}"></div>
+      <div class="field"><label>Status</label><select id="f_status">
+        <option ${s.status!=='Inactive'?'selected':''}>Active</option><option ${s.status==='Inactive'?'selected':''}>Inactive</option>
+      </select></div>
+      <div class="field">
+        <label>Photograph</label>
+        <input type="file" id="f_photo" accept="image/*">
+        ${s.photo? `<div style="margin-top:6px;"><img src="${s.photo}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid var(--line);"></div>`:''}
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStudent('${id||''}')">Save Student</button>
+    </div>
+  `);
+  setTimeout(()=>document.getElementById('f_classId').value = s.classId||'', 0);
+}
+async function saveStudent(id){
+  const data = {
+    admissionNo: document.getElementById('f_admissionNo').value.trim(),
+    name: document.getElementById('f_name').value.trim(),
+    gender: document.getElementById('f_gender').value,
+    dob: document.getElementById('f_dob').value,
+    classId: document.getElementById('f_classId').value || null,
+    house: document.getElementById('f_house').value.trim(),
+    guardianName: document.getElementById('f_guardianName').value.trim(),
+    guardianPhone: document.getElementById('f_guardianPhone').value.trim(),
+    address: document.getElementById('f_address').value.trim(),
+    status: document.getElementById('f_status').value,
+  };
+  if(!data.name){ customAlert("Please enter the student's name."); return; }
+  const photoInput = document.getElementById('f_photo');
+  const finish = async (photoDataUrl)=>{
+    if(photoDataUrl!==undefined) data.photo = photoDataUrl;
+    try{
+      if(id) await api(`/api/students/${id}`, { method:'PUT', body: JSON.stringify(data) });
+      else await api('/api/students', { method:'POST', body: JSON.stringify(data) });
+      closeModal();
+      DB.students = (await api('/api/students')).map(s=>({ ...s, id: normId(s.id), classId: normId(s.classId) }));
+      renderAll();
+    }catch(e){ customAlert(e.message); }
+  };
+  if(photoInput && photoInput.files && photoInput.files[0]){
+    resizeImageFile(photoInput.files[0]).then(finish).catch(()=>{
+      customAlert("Couldn't process that photo — try a different image file.");
+      finish(id? undefined : (data.photo=''));
+    });
+  } else {
+    finish(id? undefined : (data.photo=''));
+  }
+}
+function deleteStudent(id){
+  customConfirm('Remove this student record? This cannot be undone.', async ()=>{
+    try{
+      await api(`/api/students/${id}`, { method:'DELETE' });
+      DB.students = DB.students.filter(s=>s.id!==id);
+      renderAll();
+    }catch(e){ customAlert(e.message); }
+  });
+}
+
+/* ---------------------------------------------------------------
+   TEACHERS
+--------------------------------------------------------------- */
+function renderTeachers(){
+  document.getElementById('teacherEmpty').style.display = DB.teachers.length? 'none':'block';
+  document.getElementById('teacherTable').innerHTML = DB.teachers.map(t=>{
+    const subs = (t.subjectIds||[]).map(id=>DB.subjects.find(s=>s.id===id)).filter(Boolean).map(s=>s.name).join(', ');
+    const clss = (t.classIds||[]).map(id=>classById(id)).filter(Boolean).map(c=>c.name).join(', ');
+    return `<tr>
+      <td>${esc(t.name)}</td><td>${esc(t.phone)}</td><td>${esc(subs)||'—'}</td><td>${esc(clss)||'—'}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-outline btn-sm" onclick="openTeacherModal('${t.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTeacher('${t.id}')">Remove</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+document.getElementById('btnAddTeacher').addEventListener('click', ()=>openTeacherModal());
+function openTeacherModal(id){
+  const t = id? DB.teachers.find(x=>x.id===id) : {subjectIds:[],classIds:[]};
+  const subChecks = checkGrid(DB.subjects, 't-subj', t.subjectIds||[], 'No subjects configured yet.');
+  const classChecks = checkGrid(DB.classes, 't-class', t.classIds||[], 'No classes configured yet.');
+  openModal(`
+    <h3>${id?'Edit':'Add'} Teacher</h3>
+    <div class="form-grid">
+      <div class="field"><label>Full Name</label><input id="f_tname" value="${esc(t.name)}"></div>
+      <div class="field"><label>Phone</label><input id="f_tphone" value="${esc(t.phone)}"></div>
+      ${id? `
+        <div class="field" style="grid-column:1/-1;"><label>Email (sign-in, cannot be changed here)</label><input value="${esc(t.email)}" disabled></div>
+      ` : `
+        <div class="field"><label>Email (used to sign in)</label><input id="f_temail" type="email" placeholder="teacher@school.local"></div>
+        <div class="field"><label>Initial Password</label><input id="f_tpassword" type="text" placeholder="At least 6 characters"></div>
+      `}
+    </div>
+    <div class="field" style="margin-top:12px;"><label>Subjects taught</label>${subChecks}</div>
+    <div class="field" style="margin-top:12px;"><label>Assigned classes</label>${classChecks}</div>
+    <div class="modal-actions">
+      ${id? `<button class="btn btn-outline" onclick="openResetPasswordModal('${id}')">Reset Password</button>` : ''}
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTeacher('${id||''}')">Save Teacher</button>
+    </div>
+  `);
+}
+async function saveTeacher(id){
+  const name = document.getElementById('f_tname').value.trim();
+  if(!name){ customAlert("Please enter the teacher's name."); return; }
+  const subjectIds = Array.from(document.querySelectorAll('.t-subj:checked')).map(c=>c.value);
+  const classIds = Array.from(document.querySelectorAll('.t-class:checked')).map(c=>c.value);
+  const phone = document.getElementById('f_tphone').value.trim();
+  try{
+    let teacherId = id;
+    if(!id){
+      const email = document.getElementById('f_temail').value.trim();
+      const password = document.getElementById('f_tpassword').value;
+      if(!email || !password){ customAlert('Enter an email and initial password for this teacher.'); return; }
+      if(password.length < 6){ customAlert('Password must be at least 6 characters.'); return; }
+      const created = await api('/api/auth/users', { method:'POST', body: JSON.stringify({ name, email, password, role:'teacher', phone }) });
+      teacherId = normId(created.id);
+    }
+    await api(`/api/teachers/${teacherId}`, { method:'PUT', body: JSON.stringify({ name, phone, subjectIds, classIds }) });
+    closeModal();
+    await loadCoreData();
+    renderAll();
+  }catch(e){ customAlert(e.message); }
+}
+function deleteTeacher(id){
+  customConfirm('Deactivate this teacher? They will no longer be able to sign in, and will be unassigned from any class. Their past scores and reports are kept.', ()=>{
+    (async ()=>{
+      try{
+        await api(`/api/teachers/${id}`, { method:'DELETE' });
+        await loadCoreData();
+        renderAll();
+      }catch(e){ customAlert(e.message); }
+    })();
+  });
+}
+function openResetPasswordModal(teacherId){
+  const t = DB.teachers.find(x=>x.id===teacherId);
+  openModal(`
+    <h3>Reset Password — ${esc(t? t.name : '')}</h3>
+    <div class="field"><label>New Password</label><input id="f_newpw" type="text" placeholder="At least 6 characters"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitResetPassword('${teacherId}')">Reset Password</button>
+    </div>
+  `);
+}
+async function submitResetPassword(teacherId){
+  const password = document.getElementById('f_newpw').value;
+  if(!password || password.length < 6){ customAlert('Password must be at least 6 characters.'); return; }
+  try{
+    await api(`/api/auth/users/${teacherId}/reset-password`, { method:'POST', body: JSON.stringify({ password }) });
+    closeModal();
+    customAlert('Password reset. Share the new password with them directly.');
+  }catch(e){ customAlert(e.message); }
+}
+function openChangePasswordModal(){
+  openModal(`
+    <h3>Change My Password</h3>
+    <div class="field"><label>Current Password</label><input id="f_curpw" type="password"></div>
+    <div class="field" style="margin-top:10px;"><label>New Password</label><input id="f_newpw2" type="password" placeholder="At least 6 characters"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitChangePassword()">Change Password</button>
+    </div>
+  `);
+}
+async function submitChangePassword(){
+  const currentPassword = document.getElementById('f_curpw').value;
+  const newPassword = document.getElementById('f_newpw2').value;
+  if(!newPassword || newPassword.length < 6){ customAlert('New password must be at least 6 characters.'); return; }
+  try{
+    await api('/api/auth/change-password', { method:'POST', body: JSON.stringify({ currentPassword, newPassword }) });
+    closeModal();
+    customAlert('Password changed.');
+  }catch(e){ customAlert(e.message); }
+}
+
+/* ---------------------------------------------------------------
+   CLASSES
+--------------------------------------------------------------- */
+function renderClasses(){
+  document.getElementById('classEmpty').style.display = DB.classes.length? 'none':'block';
+  document.getElementById('classCards').innerHTML = DB.classes.map(c=>{
+    const teacher = teacherById(c.teacherId);
+    const roll = studentsInClass(c.id).length;
+    return `<div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <div style="font-family:'Lora',serif; font-weight:700; font-size:16px;">${esc(c.name)}</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:2px;">${teacher?esc(teacher.name):'No teacher assigned'}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'Lora',serif; font-weight:700; font-size:18px;">${roll}</div>
+          <div style="font-size:10.5px; color:var(--muted);">on roll${c.capacity? ' / '+c.capacity:''}</div>
+        </div>
+      </div>
+      <div style="margin-top:12px; font-size:12px; color:var(--muted);">${subjectsForClass(c.id).length} subject(s) assigned</div>
+      <div style="margin-top:12px; display:flex; gap:6px;">
+        <button class="btn btn-outline btn-sm" onclick="openClassModal('${c.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteClass('${c.id}')">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+document.getElementById('btnAddClass').addEventListener('click', ()=>openClassModal());
+function openClassModal(id){
+  const c = id? DB.classes.find(x=>x.id===id) : {};
+  const teacherOpts = DB.teachers.map(t=>`<option value="${t.id}" ${c.teacherId===t.id?'selected':''}>${esc(t.name)}</option>`).join('');
+  openModal(`
+    <h3>${id?'Edit':'Add'} Class</h3>
+    <div class="form-grid">
+      <div class="field"><label>Class Name</label><input id="f_cname" placeholder="e.g. Basic 7" value="${esc(c.name)}"></div>
+      <div class="field"><label>Capacity</label><input type="number" id="f_ccap" value="${c.capacity||''}"></div>
+      <div class="field" style="grid-column:1/-1;"><label>Class Teacher</label><select id="f_cteacher"><option value="">— unassigned —</option>${teacherOpts}</select></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveClass('${id||''}')">Save Class</button>
+    </div>
+  `);
+  setTimeout(()=>document.getElementById('f_cteacher').value = c.teacherId||'', 0);
+}
+async function saveClass(id){
+  const name = document.getElementById('f_cname').value.trim();
+  if(!name){ customAlert('Please enter a class name.'); return; }
+  const data = {name, capacity: document.getElementById('f_ccap').value || null, teacherId: document.getElementById('f_cteacher').value || null};
+  try{
+    if(id) await api(`/api/classes/${id}`, { method:'PUT', body: JSON.stringify(data) });
+    else await api('/api/classes', { method:'POST', body: JSON.stringify(data) });
+    closeModal();
+    await loadCoreData();
+    renderAll();
+  }catch(e){ customAlert(e.message); }
+}
+function deleteClass(id){
+  customConfirm('Remove this class? Students remain but will be unassigned.', ()=>{
+    (async ()=>{
+      try{
+        await api(`/api/classes/${id}`, { method:'DELETE' });
+        await loadCoreData();
+        renderAll();
+      }catch(e){ customAlert(e.message); }
+    })();
+  });
+}
+
+/* ---------------------------------------------------------------
+   SUBJECTS
+--------------------------------------------------------------- */
+function renderSubjects(){
+  document.getElementById('subjectTable').innerHTML = DB.subjects.map(s=>{
+    const clss = (s.classIds||[]).map(id=>classById(id)).filter(Boolean).map(c=>c.name).join(', ');
+    return `<tr>
+      <td>${esc(s.name)}</td><td>${esc(clss)||'—'}</td>
+      <td>${s.inAggregate!==false? '<span class="badge active">Yes</span>':'<span class="badge inactive">No</span>'}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-outline btn-sm" onclick="openSubjectModal('${s.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteSubject('${s.id}')">Remove</button>
+      </td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:20px;">No subjects yet.</td></tr>`;
+}
+document.getElementById('btnAddSubject').addEventListener('click', ()=>openSubjectModal());
+function openSubjectModal(id){
+  const s = id? DB.subjects.find(x=>x.id===id) : {classIds:[], inAggregate:true};
+  const classChecks = checkGrid(DB.classes, 's-class', s.classIds||[], 'No classes configured yet.');
+  openModal(`
+    <h3>${id?'Edit':'Add'} Subject</h3>
+    <div class="form-grid">
+      <div class="field"><label>Subject Name</label><input id="f_sname" value="${esc(s.name)}"></div>
+      <div class="field"><label>Counts toward aggregate</label><select id="f_sagg">
+        <option value="yes" ${s.inAggregate!==false?'selected':''}>Yes</option><option value="no" ${s.inAggregate===false?'selected':''}>No</option>
+      </select></div>
+    </div>
+    <div class="field" style="margin-top:12px;"><label>Taught in classes</label>${classChecks}</div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSubject('${id||''}')">Save Subject</button>
+    </div>
+  `);
+}
+async function saveSubject(id){
+  const name = document.getElementById('f_sname').value.trim();
+  if(!name){ customAlert('Please enter a subject name.'); return; }
+  const classIds = Array.from(document.querySelectorAll('.s-class:checked')).map(c=>c.value);
+  const data = {name, classIds, inAggregate: document.getElementById('f_sagg').value==='yes'};
+  try{
+    if(id) await api(`/api/subjects/${id}`, { method:'PUT', body: JSON.stringify(data) });
+    else await api('/api/subjects', { method:'POST', body: JSON.stringify(data) });
+    closeModal();
+    await loadCoreData();
+    renderAll();
+  }catch(e){ customAlert(e.message); }
+}
+function deleteSubject(id){
+  customConfirm('Remove this subject?', ()=>{
+    (async ()=>{
+      try{
+        await api(`/api/subjects/${id}`, { method:'DELETE' });
+        await loadCoreData();
+        renderAll();
+      }catch(e){ customAlert(e.message); }
+    })();
+  });
+}
+
+/* ---------------------------------------------------------------
+   SCORE ENTRY
+--------------------------------------------------------------- */
+function renderScoreClassOptions(){
+  const sel = document.getElementById('scoreClassSelect');
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">Select a class…</option>` + DB.classes.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  if(cur) sel.value = cur;
+}
+document.getElementById('scoreClassSelect').addEventListener('change', async ()=>{
+  const classId = document.getElementById('scoreClassSelect').value;
+  const area = document.getElementById('scoreArea');
+  if(!classId){ area.innerHTML = `<div class="empty-state"><div class="icon">◇</div>Choose a class above to enter scores.</div>`; return; }
+  area.innerHTML = `<div class="empty-state">Loading scores…</div>`;
+  try{ await loadScoresForClass(classId); }
+  catch(e){ area.innerHTML = `<div class="warn-banner">⚠ ${esc(e.message)}</div>`; return; }
+  renderScoreArea();
+});
+function renderScoreArea(){
+  const classId = document.getElementById('scoreClassSelect').value;
+  const area = document.getElementById('scoreArea');
+  if(!classId){ area.innerHTML = `<div class="empty-state"><div class="icon">◇</div>Choose a class above to enter scores.</div>`; return; }
+  const subs = subjectsForClass(classId);
+  const students = studentsInClass(classId);
+  if(!subs.length){ area.innerHTML = `<div class="warn-banner">⚠ This class has no subjects assigned yet. Go to <b>Subjects</b> and assign subjects to this class first.</div>`; return; }
+  if(!students.length){ area.innerHTML = `<div class="warn-banner">⚠ This class has no students yet.</div>`; return; }
+
+  const editable = canEditScores(classId);
+  let permissionHtml = '';
+  if(!editable){
+    const cls0 = classById(classId);
+    const t0 = teacherById(cls0.teacherId);
+    permissionHtml = `<div class="warn-banner">⚠ Only ${t0? esc(t0.name) : 'the assigned class teacher'} or an administrator can enter scores for ${esc(cls0.name)}. This is enforced by the server — you're viewing in read-only mode.</div>`;
+  }
+
+  // Preserve horizontal scroll position and focused cell across re-renders
+  const existingWrap = area.querySelector('.table-wrap');
+  const savedScrollLeft = existingWrap? existingWrap.scrollLeft : 0;
+  const savedScrollTop = existingWrap? existingWrap.scrollTop : 0;
+  const active = document.activeElement;
+  let focusInfo = null;
+  if(active && active.classList && active.classList.contains('cell-input')){
+    focusInfo = {stu:active.dataset.stu, sub:active.dataset.sub, field:active.dataset.field, selStart:active.selectionStart, selEnd:active.selectionEnd};
+  }
+
+  const key = scoreKey(classId);
+  const classScores = DB.scores[key] || {};
+
+  // Validation warnings
+  const warnings = [];
+  const cls = classById(classId);
+  if(!cls.teacherId) warnings.push(`No class teacher assigned to ${esc(cls.name)}.`);
+  students.forEach(st=>{
+    const stScores = classScores[st.id] || {};
+    subs.forEach(sub=>{
+      const sc = stScores[sub.id] || {};
+      const sba = sc.sba===undefined||sc.sba===''? null : Number(sc.sba);
+      const exam = sc.exam===undefined||sc.exam===''? null : Number(sc.exam);
+      if(sba===null && exam===null) warnings.push(`${esc(st.name)} has no score for ${esc(sub.name)}.`);
+      if(sba!==null && sba>50) warnings.push(`${esc(st.name)}'s SBA for ${esc(sub.name)} (${sba}) exceeds 50.`);
+      if(exam!==null && exam>50) warnings.push(`${esc(st.name)}'s Exam score for ${esc(sub.name)} (${exam}) exceeds 50.`);
+    });
+  });
+  const warnHtml = warnings.length? `<div class="warn-banner"><div>⚠<br></div><div>${warnings.slice(0,8).map(w=>w).join('<br>')}${warnings.length>8? `<br><i>+ ${warnings.length-8} more…</i>`:''}</div></div>` : '';
+
+  let head = `<th>Student</th>`;
+  subs.forEach(s=>{ head += `<th colspan="2">${esc(s.name)}</th>`; });
+  head += `<th>Total</th><th>Avg</th><th>Rank</th>`;
+
+  let subHead = `<th></th>`;
+  subs.forEach(()=>{ subHead += `<th style="font-weight:400;">SBA</th><th style="font-weight:400;">Exam</th>`; });
+  subHead += `<th></th><th></th><th></th>`;
+
+  const results = computeClassResults(classId);
+  const rows = results.map(r=>{
+    let cells = `<td style="text-align:left; font-weight:600;">${esc(r.student.name)}</td>`;
+    subs.forEach(sub=>{
+      const sc = (classScores[r.student.id]||{})[sub.id] || {};
+      const dis = editable? '' : 'disabled';
+      cells += `<td><input type="number" min="0" max="50" class="cell-input" data-stu="${r.student.id}" data-sub="${sub.id}" data-field="sba" value="${sc.sba??''}" ${dis}></td>`;
+      cells += `<td><input type="number" min="0" max="50" class="cell-input" data-stu="${r.student.id}" data-sub="${sub.id}" data-field="exam" value="${sc.exam??''}" ${dis}></td>`;
+    });
+    cells += `<td style="font-weight:700;">${r.total||''}</td><td>${r.count? r.avg.toFixed(1):''}</td><td>${r.count? `${r.rank}/${students.length}`:''}</td>`;
+    return `<tr>${cells}</tr>`;
+  }).join('');
+
+  area.innerHTML = `
+    ${permissionHtml}
+    ${warnHtml}
+    <div class="toolbar" style="margin-bottom:8px;">
+      <div></div>
+      <button class="btn btn-outline btn-sm" onclick="exportScoreSheetCSV('${classId}')">Export CSV</button>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr>${head}</tr><tr>${subHead}</tr></thead>
+      <tbody id="scoreBody">${rows}</tbody>
+    </table></div>
+    <div class="kbd-hint">${editable? 'Scores save to the server as you type. Grade &amp; remark for each subject are computed from the grading scheme in Settings.' : ''}</div>
+  `;
+
+  // Restore scroll position so the table doesn't jump back to the start on every keystroke
+  const newWrap = area.querySelector('.table-wrap');
+  if(newWrap){ newWrap.scrollLeft = savedScrollLeft; newWrap.scrollTop = savedScrollTop; }
+  // Restore focus and cursor position to the cell that was being edited
+  if(focusInfo && editable){
+    const inp = area.querySelector(`.cell-input[data-stu="${focusInfo.stu}"][data-sub="${focusInfo.sub}"][data-field="${focusInfo.field}"]`);
+    if(inp){
+      inp.focus();
+      try{ inp.setSelectionRange(focusInfo.selStart, focusInfo.selEnd); }catch(e){ /* number inputs may not support selection range in all browsers */ }
+    }
+  }
+
+  if(!editable) return; // read-only: skip attaching edit listeners entirely
+
+  document.querySelectorAll('#scoreBody .cell-input').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const {stu, sub, field} = inp.dataset;
+      DB.scores[key] = DB.scores[key] || {};
+      DB.scores[key][stu] = DB.scores[key][stu] || {};
+      DB.scores[key][stu][sub] = DB.scores[key][stu][sub] || {};
+      DB.scores[key][stu][sub][field] = inp.value;
+      // live-update total/avg/rank without losing scroll/focus position, and push to the server (debounced)
+      renderScoreAreaSoft(classId);
+      queueScoreSave(classId, stu, sub);
+    });
+  });
+}
+const __pendingScoreSaves = {}; // "stu|sub" -> debounce timer
+function queueScoreSave(classId, studentId, subjectId){
+  const dkey = studentId + '|' + subjectId;
+  clearTimeout(__pendingScoreSaves[dkey]);
+  setSaveStatus('saving');
+  __pendingScoreSaves[dkey] = setTimeout(async ()=>{
+    const key = scoreKey(classId);
+    const sc = (DB.scores[key][studentId] || {})[subjectId] || {};
+    try{
+      await api('/api/scores', { method:'PUT', body: JSON.stringify({
+        year: DB.settings.currentYear, term: DB.settings.currentTerm,
+        studentId, subjectId, sba: sc.sba===''? null : sc.sba, exam: sc.exam===''? null : sc.exam,
+      })});
+      setSaveStatus('saved');
+    }catch(e){
+      setSaveStatus('error', e.message);
+      customAlert(`That score didn't save: ${e.message}`);
+    }
+  }, 600);
+}
+function renderScoreAreaSoft(classId){
+  // recompute totals row-wise on a short debounce; scroll and focus are preserved in renderScoreArea itself
+  clearTimeout(window.__scoreRerenderT);
+  window.__scoreRerenderT = setTimeout(()=>{ renderScoreArea(); renderDashboard(); }, 500);
+}
+function ordinal(n){
+  const s=["th","st","nd","rd"], v=n%100;
+  return n + (s[(v-20)%10]||s[v]||s[0]);
+}
+
+/* ---------------------------------------------------------------
+   REPORTS
+--------------------------------------------------------------- */
+function renderReportClassOptions(){
+  const sel = document.getElementById('reportClassSelect');
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">Select a class…</option>` + DB.classes.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  if(cur) sel.value = cur;
+}
+document.getElementById('reportClassSelect').addEventListener('change', async ()=>{
+  const classId = document.getElementById('reportClassSelect').value;
+  const listEl = document.getElementById('reportList');
+  document.getElementById('reportPreview').innerHTML = '';
+  if(!classId){ listEl.innerHTML = ''; return; }
+  listEl.innerHTML = `<div class="empty-state">Loading…</div>`;
+  try{ await loadScoresForClass(classId); }
+  catch(e){ listEl.innerHTML = `<div class="warn-banner">⚠ ${esc(e.message)}</div>`; return; }
+  renderReportList();
+});
+document.getElementById('btnGenerateClass').addEventListener('click', ()=>{
+  const classId = document.getElementById('reportClassSelect').value;
+  if(!classId){ customAlert('Select a class first.'); return; }
+  renderAllReportsForClass(classId);
+});
+document.getElementById('btnExportResults').addEventListener('click', ()=>{
+  const classId = document.getElementById('reportClassSelect').value;
+  if(!classId){ customAlert('Select a class first.'); return; }
+  exportClassResultsCSV(classId);
+});
+function renderReportList(){
+  const classId = document.getElementById('reportClassSelect').value;
+  const listEl = document.getElementById('reportList');
+  document.getElementById('reportPreview').innerHTML = '';
+  if(!classId){ listEl.innerHTML=''; return; }
+  const results = computeClassResults(classId);
+  const cls = classById(classId);
+  const warnings = [];
+  if(!cls.teacherId) warnings.push('No class teacher assigned — reports will show a blank Class Teacher line.');
+  if(!DB.settings.headmaster) warnings.push("Headmaster's name is not set in Settings — reports will show a blank Headmaster line.");
+  const incomplete = results.filter(r=>r.count < subjectsForClass(classId).length);
+  if(incomplete.length) warnings.push(`${incomplete.length} student(s) have missing subject scores — their reports will show gaps.`);
+  const warnHtml = warnings.length? `<div class="warn-banner"><div>⚠</div><div>${warnings.join('<br>')}</div></div>` : '';
+  const rollCount = studentsInClass(classId).length;
+
+  listEl.innerHTML = `${warnHtml}<div class="table-wrap"><table>
+    <thead><tr><th>Student</th><th>Total</th><th>Average</th><th>Position</th><th></th></tr></thead>
+    <tbody>${results.map(r=>{
+      const phone = (r.student.guardianPhone||'').replace(/[^\d]/g,'');
+      const posStr = r.count? `${r.rank}/${rollCount}` : '—';
+      const msg = encodeURIComponent(`${DB.settings.schoolName}: ${r.student.name}'s ${DB.settings.currentTerm} report (${DB.settings.currentYear}) — Total: ${r.total}, Average: ${r.count?r.avg.toFixed(1)+'%':'—'}, Position: ${posStr} in class.`);
+      const waLink = phone? `<a class="btn btn-outline btn-sm" href="https://wa.me/${phone}?text=${msg}" target="_blank" rel="noopener">Notify Parent</a>` : `<span style="color:var(--muted); font-size:11px;">No phone</span>`;
+      return `<tr>
+      <td>${esc(r.student.name)}</td><td>${r.total||'—'}</td><td>${r.count?r.avg.toFixed(1)+'%':'—'}</td><td>${posStr}</td>
+      <td style="white-space:nowrap; display:flex; gap:6px;">
+        <button class="btn btn-outline btn-sm" onclick="previewReport('${classId}','${r.student.id}')">Preview Report</button>
+        <button class="btn btn-outline btn-sm" onclick="openRemarkModal('${r.student.id}','${classId}')">Edit Details</button>
+        ${waLink}
+        ${r.total? `<button class="btn btn-danger btn-sm" onclick="deleteReport('${r.student.id}','${classId}')">Delete Report</button>` : ''}
+      </td>
+    </tr>`;}).join('')}</tbody>
+  </table></div>`;
+}
+
+/* ---------------------------------------------------------------
+   PER-STUDENT REPORT DETAILS (conduct, attendance, PD, billing)
+--------------------------------------------------------------- */
+async function openRemarkModal(studentId, classId){
+  const st = DB.students.find(s=>s.id===studentId);
+  try{ await loadRemark(studentId); }
+  catch(e){ customAlert(e.message); return; }
+  const r = getRemark(studentId);
+  const pdField = (key, label)=>`
+    <div class="field"><label>${label}</label><select id="pd_${key}">
+      <option value="" ${!r.pd[key]?'selected':''}>—</option>
+      ${['A','B','C','D'].map(v=>`<option value="${v}" ${r.pd[key]===v?'selected':''}>${v}</option>`).join('')}
+    </select></div>`;
+  openModal(`
+    <h3>Report Details — ${esc(st.name)}</h3>
+    <div style="font-size:11.5px; color:var(--muted); margin-bottom:12px;">${esc(DB.settings.currentTerm)}, ${esc(DB.settings.currentYear)}</div>
+    <div class="form-grid cols-3">
+      <div class="field"><label>Attendance (days present)</label><input id="rm_present" value="${esc(r.attendancePresent)}"></div>
+      <div class="field"><label>Bill In Arrears</label><input id="rm_arrears" value="${esc(r.billArrears)}"></div>
+      <div class="field"><label>Total Bills</label><input id="rm_totalBills" value="${esc(r.totalBills)}"></div>
+    </div>
+    <div class="form-grid cols-3" style="margin-top:12px;">
+      <div class="field"><label>Conduct</label><input id="rm_conduct" value="${esc(r.conduct)}"></div>
+      <div class="field"><label>Attitude</label><input id="rm_attitude" value="${esc(r.attitude)}"></div>
+      <div class="field"><label>Interest</label><input id="rm_interest" value="${esc(r.interest)}"></div>
+    </div>
+    <div class="form-grid" style="margin-top:12px;">
+      <div class="field"><label>Class Teacher's Remarks</label><textarea id="rm_ctRemarks">${esc(r.classTeacherRemarks)}</textarea></div>
+      <div class="field"><label>Headmaster's Remarks</label><textarea id="rm_hmRemarks">${esc(r.headmasterRemarks)}</textarea></div>
+    </div>
+    <div class="section-title" style="margin-top:16px; font-size:13px;">Personal development <span class="hint">A = Excellent, B = Very Good, C = Good, D = Below Average</span></div>
+    <div class="form-grid cols-3">
+      ${pdField('neatness','Neatness')}${pdField('concentration','Concentration')}${pdField('sociability','Sociability')}
+      ${pdField('classParticipation','Class Participation')}${pdField('conversation','Conversation')}${pdField('workEthics','Work Ethics')}
+      ${pdField('punctuality','Punctuality')}${pdField('courtesy','Courtesy')}
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRemark('${studentId}','${classId}')">Save Details</button>
+    </div>
+  `);
+}
+async function saveRemark(studentId, classId){
+  const pd = {};
+  ['neatness','concentration','sociability','classParticipation','conversation','workEthics','punctuality','courtesy'].forEach(k=>{
+    pd[k] = document.getElementById('pd_'+k).value;
+  });
+  const payload = {
+    year: DB.settings.currentYear,
+    term: DB.settings.currentTerm,
+    attendancePresent: document.getElementById('rm_present').value.trim(),
+    billArrears: document.getElementById('rm_arrears').value.trim(),
+    totalBills: document.getElementById('rm_totalBills').value.trim(),
+    conduct: document.getElementById('rm_conduct').value.trim(),
+    attitude: document.getElementById('rm_attitude').value.trim(),
+    interest: document.getElementById('rm_interest').value.trim(),
+    classTeacherRemarks: document.getElementById('rm_ctRemarks').value.trim(),
+    headmasterRemarks: document.getElementById('rm_hmRemarks').value.trim(),
+    pd,
+  };
+  try{
+    await api(`/api/remarks/${studentId}`, { method:'PUT', body: JSON.stringify(payload) });
+    DB.remarks[remarkKey(studentId)] = { ...payload, pd };
+    closeModal();
+    if(document.getElementById('view-reports').classList.contains('active')) renderReportList();
+  }catch(e){ customAlert(e.message); }
+}
+function deleteReport(studentId, classId){
+  const st = DB.students.find(s=>s.id===studentId);
+  customConfirm(`Delete ${st?st.name:'this student'}'s report for ${DB.settings.currentTerm}, ${DB.settings.currentYear}?\n\nThis clears their scores and report details (attendance, conduct, remarks, personal development) for this term only — it does not remove the student record.`, ()=>{
+    (async ()=>{
+      try{
+        await api('/api/scores', { method:'DELETE', body: JSON.stringify({
+          year: DB.settings.currentYear, term: DB.settings.currentTerm, studentId,
+        })});
+        const key = scoreKey(classId);
+        if(DB.scores[key]) delete DB.scores[key][studentId];
+        delete DB.remarks[remarkKey(studentId)];
+        document.getElementById('reportPreview').innerHTML = '';
+        renderReportList();
+        if(document.getElementById('view-scores').classList.contains('active')) renderScoreArea();
+      }catch(e){ customAlert(e.message); }
+    })();
+  });
+}
+function previousTermKey(){
+  const terms = ['First Term','Second Term','Third Term'];
+  const idx = terms.indexOf(DB.settings.currentTerm);
+  if(idx>0) return {year: DB.settings.currentYear, term: terms[idx-1]};
+  // roll back to previous academic year's Third Term
+  const years = DB.settings.years;
+  const yIdx = years.indexOf(DB.settings.currentYear);
+  if(yIdx>0) return {year: years[yIdx-1], term:'Third Term'};
+  return null;
+}
+function studentPreviousAverage(classId, studentId){
+  const prev = previousTermKey();
+  if(!prev) return null;
+  const key = `${prev.year}|${prev.term}|${classId}`;
+  const classScores = DB.scores[key];
+  if(!classScores || !classScores[studentId]) return null;
+  const subs = subjectsForClass(classId);
+  const stScores = classScores[studentId];
+  let total=0, count=0;
+  subs.forEach(sub=>{
+    const sc = stScores[sub.id];
+    if(!sc) return;
+    const sba = Number(sc.sba)||0, exam = Number(sc.exam)||0;
+    if((sc.sba!==undefined && sc.sba!=='') || (sc.exam!==undefined && sc.exam!=='')){ total += sba+exam; count++; }
+  });
+  return count? {avg: total/count, term: prev.term, year: prev.year} : null;
+}
+function previewReport(classId, studentId){
+  const results = computeClassResults(classId);
+  const r = results.find(x=>x.student.id===studentId);
+  const cls = classById(classId);
+  const teacher = teacherById(cls.teacherId);
+  const st = r.student;
+  const set = DB.settings;
+  const ti = getTermInfo();
+  const rm = getRemark(studentId);
+  const rollCount = studentsInClass(classId).length;
+  const rankStr = r.count? `${r.rank}/${rollCount}` : `—/${rollCount}`;
+  const prevAvg = studentPreviousAverage(classId, studentId);
+  let trendNote = '';
+  if(prevAvg && r.count){
+    const diff = r.avg - prevAvg.avg;
+    const dir = diff>0.4? {sym:'▲', color:'var(--green)'} : diff<-0.4? {sym:'▼', color:'var(--red)'} : {sym:'▬', color:'var(--muted)'};
+    trendNote = ` <span style="color:${dir.color}; font-weight:700; font-size:9.5px;">${dir.sym} ${Math.abs(diff).toFixed(1)} pts vs ${esc(prevAvg.term)}</span>`;
+  }
+
+  // Subject rows with grading-key reference columns running alongside (matches the printed template)
+  const grading = set.grading;
+  const subjectRows = r.subjectRows.map((row, i)=>{
+    const sub = DB.subjects.find(s=>s.id===row.subjectId);
+    const rankOf = `${row.rank}/${rollCount}`;
+    let gkeyCells;
+    if(i < grading.length){
+      const g = grading[i];
+      gkeyCells = `<td class="gkey">${g.min} – ${g.max}</td><td class="gkey-num">${esc(g.grade)}</td><td class="gkey">${esc(g.remark)}</td>`;
+    } else if(i === grading.length){
+      gkeyCells = `<td class="gkey" colspan="3" rowspan="2" style="vertical-align:top;"><u>FOR PERSONAL DEVELOPMENT:</u><br>A is Excellent<br>B is Very Good<br>C is Good<br>D is Below Average</td>`;
+    } else if(i === grading.length+1){
+      gkeyCells = ``; // covered by rowspan above
+    } else {
+      gkeyCells = `<td class="gkey"></td><td class="gkey"></td><td class="gkey"></td>`;
+    }
+    return `<tr>
+      <td class="subj">${esc(sub?sub.name:'')}</td><td>${row.sba||''}</td><td>${row.exam||''}</td>
+      <td><b>${row.total||''}</b></td><td>${row.grade}</td><td style="font-size:8.7px;">${row.remark}</td><td>${rankOf}</td>
+      ${gkeyCells}
+    </tr>`;
+  }).join('');
+
+  const aggregate = computeAggregate(r.subjectRows);
+
+  const pdRow = (labelL, valL, labelR1, keyR1, labelR2, keyR2)=>`
+    <tr><td class="lbl">${labelL}:</td><td class="val">${esc(valL)||''}</td><td class="pdlbl">${labelR1}</td><td class="pdval">${esc(rm.pd[keyR1])||''}</td><td class="pdlbl">${labelR2}</td><td class="pdval">${esc(rm.pd[keyR2])||''}</td></tr>`;
+
+  document.getElementById('reportPreview').innerHTML = `
+    <div class="rc-actions">
+      <button class="btn btn-gold btn-sm" onclick="window.print()">Print / Save as PDF</button>
+      <button class="btn btn-outline btn-sm" onclick="openRemarkModal('${studentId}','${classId}')">Edit Details</button>
+      ${(st.guardianPhone||'').replace(/[^\d]/g,'')? `<a class="btn btn-outline btn-sm" href="https://wa.me/${(st.guardianPhone||'').replace(/[^\d]/g,'')}?text=${encodeURIComponent(`${set.schoolName}: ${st.name}'s ${set.currentTerm} report (${set.currentYear}) — Total: ${r.total}, Average: ${r.count?r.avg.toFixed(1)+'%':'—'}, Position: ${rankStr} in class.`)}" target="_blank" rel="noopener">Notify Parent (WhatsApp)</a>` : ''}
+      <button class="btn btn-danger btn-sm" onclick="deleteReport('${studentId}','${classId}')">Delete Report</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('reportPreview').innerHTML=''">Close Preview</button>
+    </div>
+    <div class="report-card">
+      <div class="rc-topbar">
+        ${st.photo? `<img src="${st.photo}" class="crest" style="object-fit:cover;">` : `<div class="crest">DH</div>`}
+        <div class="rc-school-block">
+          <div class="rc-school">${esc(set.schoolName)}${set.address? ', '+esc(set.address).toUpperCase():''}</div>
+          <div class="rc-report-title">End of Term Report</div>
+          <div class="rc-year">${esc(set.currentYear)} Academic Year</div>
+        </div>
+        <div style="width:56px;"></div>
+      </div>
+      <table class="rc-info">
+        <tr><td colspan="4"><i>Name of Pupil:</i><b>${esc(st.name)}</b></td></tr>
+        <tr>
+          <td><i>Basic:</i><b>${esc(cls.name)}</b></td>
+          <td><i>Number on Roll:</i><b>${rollCount}</b></td>
+          <td colspan="2"><i>Position In Class:</i><b>${rankStr}</b>${trendNote}</td>
+        </tr>
+        <tr>
+          <td><i>Term:</i><b>${esc(set.currentTerm)}</b></td>
+          <td><i>Total School Days:</i><b>${esc(ti.totalSchoolDays)}</b></td>
+          <td><i>Attendance:</i><b>${esc(rm.attendancePresent)}</b></td>
+          <td><i>Absence:</i><b>${ti.totalSchoolDays && rm.attendancePresent!==''? Math.max(0, Number(ti.totalSchoolDays)-Number(rm.attendancePresent)) : ''}</b></td>
+        </tr>
+        <tr>
+          <td><i>Date of Issue:</i><b>${esc(ti.dateOfIssue)}</b></td>
+          <td><i>Bill In Arrears:</i><b>${esc(rm.billArrears)}</b></td>
+          <td colspan="2"><i>Total Bills:</i><b>${esc(rm.totalBills)}</b></td>
+        </tr>
+        <tr>
+          <td><i>Next Term Begins:</i><b>${esc(ti.nextTermBegins)}</b></td>
+          <td colspan="3"><i>Next Term's Tuition Fee:</i><b>${esc(ti.nextTermTuitionFee)}</b></td>
+        </tr>
+        <tr>
+          <td colspan="2"><b>${esc(set.poBox? 'P.O. Box '+set.poBox : '')}</b></td>
+          <td colspan="2"><i>Headmaster's Contact:</i><b>${esc(ti.headmasterContact)}</b></td>
+        </tr>
+        <tr><td colspan="4"><i>Class Teacher's Contact and Name:</i><b>${esc(teacher?teacher.name:'')}${teacher&&teacher.phone? ' · '+esc(teacher.phone):''}</b></td></tr>
+        <tr class="rc-note"><td colspan="4"><u>NOTE</u>: EXAM FEE is not included in the total bill; it is paid separately. Bills should be paid promptly (before midterm).</td></tr>
+      </table>
+      <table class="rc-table">
+        <thead><tr>
+          <th>Subjects</th><th>S.B.A (50%)</th><th>Exams (50%)</th><th>Total (100%)</th><th>Grade</th><th>Remarks</th><th>Rank</th>
+          <th colspan="3">Grading System</th>
+        </tr></thead>
+        <tbody>
+          ${subjectRows}
+          <tr class="rc-agg"><td colspan="4"><i>Aggregate:</i> <b>${aggregate}</b> &nbsp;&nbsp;&nbsp; <i>Raw Score:</i> <b>${r.total}</b></td><td colspan="6"></td></tr>
+        </tbody>
+      </table>
+      <table class="rc-pd">
+        <colgroup><col style="width:16%"><col style="width:40%"><col style="width:13%"><col style="width:7%"><col style="width:13%"><col style="width:7%"></colgroup>
+        <tr><td class="lbl">Conduct:</td><td class="val">${esc(rm.conduct)}</td><td class="pd-header" colspan="4">Personal Development</td></tr>
+        ${pdRow('Attitude', rm.attitude, 'Neatness', 'neatness', 'Concentration', 'concentration')}
+        ${pdRow('Interest', rm.interest, 'Sociability', 'sociability', 'Class Participation', 'classParticipation')}
+        ${pdRow("Class Teacher's Remarks", rm.classTeacherRemarks, 'Conversation', 'conversation', 'Work Ethics', 'workEthics')}
+        ${pdRow("Headmaster's Remarks", rm.headmasterRemarks, 'Punctuality', 'punctuality', 'Courtesy', 'courtesy')}
+        <tr><td class="lbl">Name of Headmaster:</td><td colspan="5">${esc(set.headmaster)}</td></tr>
+      </table>
+      <div class="rc-sign-block">
+        <i>Headmaster's Signature and Stamp:</i>
+        <div class="box-line">&nbsp;</div>
+      </div>
+    </div>
+  `;
+}
+function renderAllReportsForClass(classId){
+  const results = computeClassResults(classId);
+  let combined = results.map(r=>buildReportHTML(classId, r.student.id)).join('<div style="page-break-after:always;"></div>');
+  document.getElementById('reportPreview').innerHTML = `
+    <div class="rc-actions">
+      <button class="btn btn-gold btn-sm" onclick="window.print()">Print / Save all as PDF</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('reportPreview').innerHTML=''">Close Preview</button>
+    </div>
+    ${combined}
+  `;
+}
+function buildReportHTML(classId, studentId){
+  previewReport(classId, studentId);
+  const html = document.getElementById('reportPreview').querySelector('.report-card').outerHTML;
+  return html;
+}
+
+/* ---------------------------------------------------------------
+   SETTINGS
+--------------------------------------------------------------- */
+function renderSettings(){
+  const s = DB.settings;
+  document.getElementById('settingsForm').innerHTML = `
+    <div class="field"><label>School Name</label><input id="set_schoolName" value="${esc(s.schoolName)}"></div>
+    <div class="field"><label>Address / Town</label><input id="set_address" value="${esc(s.address)}"></div>
+    <div class="field"><label>P.O. Box</label><input id="set_poBox" value="${esc(s.poBox)}"></div>
+    <div class="field"><label>Phone</label><input id="set_phone" value="${esc(s.phone)}"></div>
+    <div class="field"><label>Email</label><input id="set_email" value="${esc(s.email)}"></div>
+    <div class="field"><label>Motto</label><input id="set_motto" value="${esc(s.motto)}"></div>
+    <div class="field" style="grid-column:1/-1;"><label>Headmaster / Headmistress</label><input id="set_headmaster" value="${esc(s.headmaster)}"></div>
+  `;
+  document.getElementById('gradeSchemeTable').innerHTML = s.grading.map((g,i)=>`
+    <tr>
+      <td><input class="cell-input" style="width:44px;" value="${g.min}" onchange="updateGrade(${i},'min',this.value)"></td>
+      <td><input class="cell-input" style="width:44px;" value="${g.max}" onchange="updateGrade(${i},'max',this.value)"></td>
+      <td><input class="cell-input" style="width:34px;" value="${esc(g.grade)}" onchange="updateGrade(${i},'grade',this.value)"></td>
+      <td><input type="text" style="width:130px; padding:4px 6px; border:1px solid var(--line); border-radius:2px; font-size:12px;" value="${esc(g.remark)}" onchange="updateGrade(${i},'remark',this.value)"></td>
+    </tr>`).join('');
+
+  document.getElementById('yearList').innerHTML = s.years.map(y=>`
+    <span class="badge ${y===s.currentYear?'active':'inactive'}" style="margin:0 6px 6px 0; padding:5px 10px;">${esc(y)}</span>
+  `).join('');
+
+  const ti = getTermInfo();
+  document.getElementById('termInfoHint').textContent = `for ${DB.settings.currentTerm}, ${DB.settings.currentYear} — used on printed reports`;
+  document.getElementById('termInfoForm').innerHTML = `
+    <div class="field"><label>Total School Days</label><input id="ti_days" value="${esc(ti.totalSchoolDays)}"></div>
+    <div class="field"><label>Date of Issue</label><input id="ti_issue" value="${esc(ti.dateOfIssue)}" placeholder="e.g. 12th Dec 2026"></div>
+    <div class="field"><label>Next Term Begins</label><input id="ti_next" value="${esc(ti.nextTermBegins)}" placeholder="e.g. 12th Jan 2027"></div>
+    <div class="field"><label>Next Term's Tuition Fee</label><input id="ti_fee" value="${esc(ti.nextTermTuitionFee)}"></div>
+    <div class="field" style="grid-column:span 2;"><label>Headmaster's Contact</label><input id="ti_hmcontact" value="${esc(ti.headmasterContact)}"></div>
+  `;
+
+  if(CURRENT_USER && CURRENT_USER.role === 'admin'){
+    const rows = DB.teachers.map(t=>`<tr><td>${esc(t.name)}</td><td>${esc(t.email)}</td><td>Teacher</td>
+      <td><button class="btn btn-outline btn-sm" onclick="openTeacherModal('${t.id}')">Manage</button></td></tr>`).join('');
+    document.getElementById('userAccountsTable').innerHTML = rows +
+      `<tr><td>${esc(CURRENT_USER.name)}</td><td>${esc(CURRENT_USER.email)}</td><td>Administrator (you)</td><td></td></tr>`;
+  }
+}
+document.getElementById('btnSaveTermInfo').addEventListener('click', async ()=>{
+  const payload = {
+    year: DB.settings.currentYear,
+    term: DB.settings.currentTerm,
+    totalSchoolDays: document.getElementById('ti_days').value.trim(),
+    dateOfIssue: document.getElementById('ti_issue').value.trim(),
+    nextTermBegins: document.getElementById('ti_next').value.trim(),
+    nextTermTuitionFee: document.getElementById('ti_fee').value.trim(),
+    headmasterContact: document.getElementById('ti_hmcontact').value.trim(),
+  };
+  try{
+    await api('/api/settings/term-info', { method:'PUT', body: JSON.stringify(payload) });
+    DB.termInfo[ctxKey()] = payload;
+    renderAll();
+  }catch(e){ customAlert(e.message); }
+});
+async function updateGrade(i, field, val){
+  DB.settings.grading[i][field] = (field==='min'||field==='max')? Number(val) : val;
+  try{
+    await api('/api/settings/grading', { method:'PUT', body: JSON.stringify({ rows: DB.settings.grading }) });
+  }catch(e){ customAlert(e.message); }
+}
+document.getElementById('btnSaveSettings').addEventListener('click', async ()=>{
+  const payload = {
+    schoolName: document.getElementById('set_schoolName').value.trim(),
+    address: document.getElementById('set_address').value.trim(),
+    poBox: document.getElementById('set_poBox').value.trim(),
+    phone: document.getElementById('set_phone').value.trim(),
+    email: document.getElementById('set_email').value.trim(),
+    motto: document.getElementById('set_motto').value.trim(),
+    headmaster: document.getElementById('set_headmaster').value.trim(),
+  };
+  try{
+    await api('/api/settings', { method:'PUT', body: JSON.stringify(payload) });
+    Object.assign(DB.settings, payload);
+    renderAll();
+  }catch(e){ customAlert(e.message); }
+});
+document.getElementById('btnAddYear').addEventListener('click', async ()=>{
+  const val = document.getElementById('newYearInput').value.trim();
+  if(!val) return;
+  try{
+    await api('/api/settings/years', { method:'POST', body: JSON.stringify({ year: val }) });
+    if(!DB.settings.years.includes(val)) DB.settings.years.push(val);
+    document.getElementById('newYearInput').value='';
+    renderAll();
+  }catch(e){ customAlert(e.message); }
+});
+function openCreateUserModal(){ openTeacherModal(); } // creating a teacher IS creating a login — same form
+
+/* ---------------------------------------------------------------
+   AUDIT LOG
+--------------------------------------------------------------- */
+function fmtTs(iso){
+  const d = new Date(iso);
+  return d.toLocaleString(undefined, {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+}
+function renderAudit(){
+  const log = DB.auditLog || [];
+  document.getElementById('auditEmpty').style.display = log.length? 'none':'block';
+  document.getElementById('auditTable').innerHTML = log.map(e=>`<tr>
+    <td style="color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:11.5px;">${fmtTs(e.ts)}</td>
+    <td>${esc(e.userName)}</td>
+    <td>${esc(e.message)}</td>
+  </tr>`).join('');
+}
+
+/* ---------------------------------------------------------------
+   RENDER ALL
+--------------------------------------------------------------- */
+function renderAll(){
+  document.getElementById('brandSchoolName').innerHTML = esc(DB.settings.schoolName || "School").split(' ').slice(0,3).join(' ');
+  renderContextSelectors();
+  renderIdentityBadge();
+  renderDashboard();
+  renderStudents();
+  renderTeachers();
+  renderClasses();
+  renderSubjects();
+  renderScoreClassOptions();
+  renderReportClassOptions();
+  renderSettings();
+  renderAudit();
+  // Hide admin-only nav/sections from teachers — the server would refuse the writes anyway,
+  // but there's no reason to show controls that will just come back as "Administrators only."
+  const isAdmin = CURRENT_USER && CURRENT_USER.role === 'admin';
+  document.querySelector('.nav-item[data-view="audit"]').style.display = isAdmin? '' : 'none';
+}
+
+/* ---------------------------------------------------------------
+   INIT
+--------------------------------------------------------------- */
+async function seedDefaultSubjectsIfEmpty(){
+  if(DB.subjects.length || DB.classes.length || DB.students.length) return;
+  if(!CURRENT_USER || CURRENT_USER.role !== 'admin') return;
+  const names = ["English Language","Mathematics/Numeracy","Social Studies/History","Science","Creative Arts",
+    "Computing","Ghanaian Language","Career Technology","Religious and Moral Education",
+    "Handwriting/Calligraphy","Rhymes/Reading/Public Speaking"];
+  try{
+    for(const name of names){ await api('/api/subjects', { method:'POST', body: JSON.stringify({ name }) }); }
+    await loadCoreData();
+  }catch(e){ /* non-fatal — admin can add subjects manually if this fails */ }
+}
+
+(async function init(){
+  if(!API_BASE){ showSetupScreen(); return; }
+  if(!AUTH_TOKEN){ showLoginScreen(); return; }
+  try{
+    const me = await api('/api/auth/me');
+    CURRENT_USER = me.user;
+  }catch(e){
+    showLoginScreen();
+    return;
+  }
+  await bootApp();
+  await seedDefaultSubjectsIfEmpty();
+  renderAll();
+})();
+</script>
+</body>
+</html>
