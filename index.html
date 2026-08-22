@@ -234,7 +234,7 @@
     </div>
     <div class="field">
       <label>Backend address</label>
-      <input id="setupApiUrl" placeholder="e.g. http://localhost:4000 or https://your-app.onrender.com">
+      <input id="setupApiUrl" placeholder="e.g. https://your-app.onrender.com">
     </div>
     <div id="setupError" style="color:var(--red); font-size:12.5px; margin-top:8px; display:none;"></div>
     <button class="btn btn-primary" style="width:100%; margin-top:14px; justify-content:center;" onclick="submitSetup()">Connect</button>
@@ -523,7 +523,11 @@ function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; 
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){ /* private browsing etc. — session still works, just won't persist */ } }
 function lsRemove(k){ try{ localStorage.removeItem(k); }catch(e){} }
 
-let API_BASE = lsGet('sms-api-base') || '';
+// Your school's backend is now fixed at this address, so nobody has to type it in —
+// not you, and not any teacher opening this for the first time. The "change backend
+// address" link still works as an escape hatch if you ever move to a new backend.
+const BAKED_IN_API_BASE = 'https://sms-backend-cgfe.onrender.com';
+let API_BASE = lsGet('sms-api-base') || BAKED_IN_API_BASE;
 let AUTH_TOKEN = lsGet('sms-token') || '';
 let CURRENT_USER = null; // {id, name, email, role} — set after a successful login
 
@@ -621,17 +625,34 @@ function resetSetup(){
 async function submitSetup(){
   let url = document.getElementById('setupApiUrl').value.trim().replace(/\/+$/, '');
   const errEl = document.getElementById('setupError');
+  const btn = document.querySelector('#setupScreen .btn-primary');
   errEl.style.display = 'none';
   if(!url){ errEl.textContent = 'Enter the backend address.'; errEl.style.display = 'block'; return; }
-  if(!/^https?:\/\//i.test(url)) url = 'http://' + url;
+  // Default to https, not http — a deployed backend (Render, etc.) is HTTPS-only, and a
+  // bare domain pasted without a scheme (e.g. "myapp.onrender.com") was previously defaulting
+  // to http://, which browsers silently block from an https page ("mixed content").
+  if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  const originalLabel = btn.textContent;
+  btn.textContent = 'Connecting…';
+  btn.disabled = true;
   try{
-    const res = await fetch(url + '/api/health');
+    // A free-tier backend that's been asleep can take 30-60 seconds to wake up on its
+    // first request — give it a generous timeout rather than failing fast and looking broken.
+    const controller = new AbortController();
+    const timeout = setTimeout(()=>controller.abort(), 60000);
+    const res = await fetch(url + '/api/health', { signal: controller.signal });
+    clearTimeout(timeout);
     if(!res.ok) throw new Error();
   }catch(e){
-    errEl.textContent = "Couldn't reach that address. Check the backend is running and the URL is correct.";
+    errEl.innerHTML = "Couldn't reach that address. Double-check the URL is correct and starts with https://. " +
+      "If this backend has been asleep for a while (free hosting tiers do this), the first connection can take up to a minute — try again.";
     errEl.style.display = 'block';
+    btn.textContent = originalLabel;
+    btn.disabled = false;
     return;
   }
+  btn.textContent = originalLabel;
+  btn.disabled = false;
   API_BASE = url;
   lsSet('sms-api-base', url);
   showLoginScreen();
