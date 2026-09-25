@@ -220,6 +220,14 @@
 
   .kbd-hint{font-size:11px; color:var(--muted); margin-top:16px;}
   ::placeholder{color:#B6AC90;}
+/* Print only the report card itself — hide the sidebar, nav, results table, and buttons
+   that are otherwise visible on screen but have no business appearing on a printed page. */
+@media print {
+  .sidebar, .topbar, .toolbar, #reportList, .rc-actions, .warn-banner { display: none !important; }
+  .app, .main, .content { display: block !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; }
+  .report-card { box-shadow: none !important; border: none !important; margin: 0 auto !important; max-width: 100% !important; }
+  body { background: #fff !important; }
+}
 </style>
 </head>
 <body>
