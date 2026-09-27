@@ -186,6 +186,7 @@
     display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--gold); font-family:'Lora',serif;
     object-fit:cover;
   }
+  .rc-topbar .rc-photo{ width:50px; height:60px; object-fit:cover; border:2px solid var(--gold); border-radius:3px; flex-shrink:0; }
   .rc-topbar .rc-school-block{text-align:center; flex:1; font-family:'Lora',serif;}
   .rc-topbar .rc-school{font-size:17px; font-weight:700; letter-spacing:.02em;}
   .rc-topbar .rc-report-title{font-size:14px; font-style:italic; font-weight:600; margin-top:1px;}
@@ -1814,8 +1815,7 @@ function previewReport(classId, studentId){
     </div>
     <div class="report-card">
       <div class="rc-topbar">
-        ${st.photo? `<img src="${st.photo}" class="crest" style="object-fit:cover;">` : `<div class="crest">DH</div>`}
-        <div class="rc-school-block">
+${st.photo? `<img src="${st.photo}" class="rc-photo">` : `<div class="crest">DH</div>`}        <div class="rc-school-block">
           <div class="rc-school">${esc(set.schoolName)}${set.address? ', '+esc(set.address).toUpperCase():''}</div>
           <div class="rc-report-title">End of Term Report</div>
           <div class="rc-year">${esc(set.currentYear)} Academic Year</div>
