@@ -1633,7 +1633,10 @@ document.querySelectorAll('[data-ico]').forEach(el=>{ el.innerHTML = navIcon(el.
 --------------------------------------------------------------- */
 function renderStudentClassFilterOptions(){
   const opts = `<option value="">All classes</option>` + DB.classes.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
-  document.getElementById('studentClassFilter').innerHTML = opts;
+  const sel = document.getElementById('studentClassFilter');
+  const keep = sel.value; // rebuilding the options would otherwise reset the chosen class
+  sel.innerHTML = opts;
+  sel.value = DB.classes.some(c=>c.id===keep) ? keep : '';
 }
 function renderStudents(){
   renderStudentClassFilterOptions();
