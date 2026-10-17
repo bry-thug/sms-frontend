@@ -9,18 +9,23 @@
   @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 
   :root{
-    --ink:#1B2A4A;
-    --ink-2:#2C4067;
-    --parchment:#F6F1E4;
-    --paper:#FFFDF7;
-    --gold:#B8873A;
-    --gold-light:#E8D5A8;
-    --green:#3B6E4F;
-    --red:#A3403F;
-    --line:#DDD2B8;
-    --text:#2A2620;
-    --muted:#7A7260;
-    --radius:3px;
+    color-scheme:dark;
+    --ink:#E8EEF9;
+    --ink-2:#C5D3EA;
+    --parchment:#071326;
+    --paper:#0D1D37;
+    --panel-2:#142849;
+    --sidebar:#0A1830;
+    --gold:#F5A524;
+    --gold-light:#3A2F14;
+    --green:#2DD4A0;
+    --red:#FF7A78;
+    --line:#1C3254;
+    --text:#D6E0F2;
+    --muted:#8A9FBE;
+    --brand:#2563EB;
+    --brand-2:#1D4ED8;
+    --radius:10px;
   }
   *{box-sizing:border-box;}
   body{
@@ -312,7 +317,200 @@
   @media(max-width:420px){
     .grid.cols-4, .grid.cols-3{grid-template-columns:1fr 1fr;}
     .stat-card .label{font-size:10px;}
-    .qa-btn{flex:1 1 100%;}
+    .qa-btn{flex:1 1 calc(50% - 10px); justify-content:center; text-align:center;}
+  }
+
+  /* =====================================================================
+     DARK THEME + DASHBOARD  (overrides the light styles above)
+     ===================================================================== */
+  body{background:var(--parchment); color:var(--text);}
+  h1,h2,h3,.serif{font-family:'Inter',sans-serif; letter-spacing:-.01em;}
+  .view:not(#view-reports) [style*="Lora"], .modal [style*="Lora"], #setupScreen [style*="Lora"], #loginScreen [style*="Lora"]{font-family:'Inter',sans-serif !important;}
+  .card{background:var(--paper); border:1px solid var(--line); border-radius:14px;}
+  a{color:#7FB0FF;}
+
+  /* Sidebar */
+  .sidebar{width:250px; background:var(--sidebar); color:var(--text); position:sticky; top:0; height:100vh; overflow-y:auto; padding:20px 0 16px; border-right:1px solid var(--line);}
+  .brand{display:flex; align-items:center; gap:11px; padding:0 18px 18px; border-bottom:1px solid var(--line); margin-bottom:14px;}
+  .brand-logo{width:40px; height:40px; flex-shrink:0; color:#fff;}
+  .brand-logo svg{width:100%; height:100%;}
+  .brand .name{font-family:'Inter',sans-serif; font-size:15px; font-weight:700; line-height:1.25; color:#fff;}
+  .brand .sub{font-size:11.5px; letter-spacing:0; text-transform:none; color:var(--muted); margin-top:3px;}
+  .nav-group{margin-top:6px;}
+  .nav-label{font-size:11.5px; letter-spacing:0; text-transform:none; color:#5F7699; padding:10px 22px 4px; font-weight:600;}
+  .nav-item{margin:2px 12px; padding:11px 12px; border-radius:10px; border-left:none; font-size:14px; color:#B7C6DE; gap:13px; font-weight:500;}
+  .nav-item svg{width:20px; height:20px; flex-shrink:0; opacity:.9;}
+  .nav-item:hover{background:rgba(255,255,255,.06); color:#fff;}
+  .nav-item.active{background:var(--brand); color:#fff; font-weight:600; box-shadow:0 6px 18px rgba(37,99,235,.35);}
+  .side-quote{margin:auto 22px 8px; padding-top:22px; font-style:italic; font-size:13.5px; line-height:1.55; color:#7F93B3;}
+  .side-quote span{display:block; font-style:normal; margin-top:8px; font-size:12.5px; color:#9FB2CF;}
+  @media(max-height:780px){ .side-quote{display:none;} }
+
+  /* Topbar */
+  .topbar{background:var(--sidebar); border-bottom:1px solid var(--line); padding:12px 28px; gap:18px;}
+  .topbar h1{font-size:18px; white-space:nowrap;}
+  .identity .who{white-space:nowrap;}
+  body[data-view="dashboard"] .topbar h1{display:none;}
+  .search-box{flex:1; max-width:440px; display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--line);
+    border-radius:12px; padding:0 14px; height:42px; color:var(--muted); margin:0 auto;}
+  .search-box svg{width:18px; height:18px; flex-shrink:0;}
+  .search-box input{flex:1; min-width:0; background:none; border:none; outline:none; color:var(--text); font-family:'Inter',sans-serif; font-size:14px;}
+  .search-box:focus-within{border-color:var(--brand);}
+  .context-pills{gap:10px;}
+  .pill-select{background:var(--panel-2); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:9px 12px; font-weight:500;}
+  .identity{display:flex; align-items:center; gap:10px; background:none; border:none; color:var(--text); cursor:pointer; font-family:'Inter',sans-serif; padding:0 0 0 6px; text-align:left;}
+  .identity .av{width:38px; height:38px; border-radius:50%; background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0;}
+  .identity .who{display:flex; flex-direction:column; line-height:1.25; font-size:13.5px; font-weight:600; color:#fff;}
+  .identity .who small{font-weight:400; font-size:11.5px; color:var(--muted);}
+
+  /* Controls */
+  .btn-primary{background:var(--brand); color:#fff;}
+  .btn-primary:hover{background:var(--brand-2);}
+  .btn-gold{background:var(--gold); color:#1A1204;}
+  .btn-gold:hover{background:#E0951A;}
+  .btn-outline{border:1px solid var(--line); color:var(--ink); background:transparent;}
+  .btn-outline:hover{border-color:#4A6FA8; background:rgba(255,255,255,.04);}
+  .btn-danger:hover{background:rgba(255,122,120,.12);}
+  .btn{border-radius:9px;}
+  .qa-btn{background:var(--paper); border:1px solid var(--line); color:var(--ink); border-radius:10px;}
+  .qa-btn:hover{border-color:var(--brand); background:var(--panel-2);}
+  .field input, .field select, .field textarea, .search-input, input.cell-input, select.cell-select,
+  input[type=number].cell-input, input[type=text].cell-input, input[type=text], input[type=number], input[type=date], input[type=email], input[type=password], select, textarea{
+    background:#0A1830; color:var(--text); border-color:var(--line);
+  }
+  .field input, .field select, .field textarea{border-radius:9px;}
+  .search-box input{background:none;}
+  .field input:focus, .field select:focus, .field textarea:focus, .search-input:focus, .pill-select:focus{outline:2px solid rgba(37,99,235,.55); outline-offset:0; border-color:var(--brand);}
+  ::placeholder{color:#566E91;}
+  .field label, th{color:var(--muted);}
+  th{border-bottom:1px solid var(--line);}
+  td{border-bottom:1px solid var(--line);}
+  tr:hover td{background:rgba(255,255,255,.03);}
+  .check-grid{background:#0A1830;}
+  .check-item:hover{background:var(--panel-2);}
+  .modal-overlay{background:rgba(2,8,20,.72);}
+  .modal{background:var(--paper); border:1px solid var(--line); border-radius:14px;}
+  .warn-banner{background:rgba(245,165,36,.1); border:1px solid rgba(245,165,36,.35); color:#F5C26B; border-radius:10px;}
+  .badge.active, .badge.grade-good{background:rgba(45,212,160,.15); color:#2DD4A0;}
+  .badge.inactive, .badge.grade-low{background:rgba(255,122,120,.15); color:#FF7A78;}
+  .badge.grade-mid{background:rgba(245,165,36,.15); color:#F5A524;}
+  .rk-tab{background:var(--paper); color:var(--ink); border-radius:10px;}
+  .rk-tab.active{background:var(--brand); border-color:var(--brand); color:#fff;}
+  .rk-medal{background:var(--panel-2); color:var(--ink);}
+  .rk-level{color:var(--gold);}
+  .stat-card .value{font-family:'Inter',sans-serif; color:#fff;}
+  .empty-state{color:var(--muted);}
+
+  /* Report card stays a light, printable sheet */
+  .report-card{--ink:#1B2A4A; --paper:#FFFDF7; --text:#2A2620; --muted:#7A7260; --gold:#B8873A; --gold-light:#E8D5A8; --line:#DDD2B8;
+    background:#FFFDF7; color:#2A2620; border-radius:3px;}
+  .report-card td, .report-card th{border-color:#1B2A4A;}
+  .report-card tr:hover td{background:transparent;}
+  .report-card .rc-table th, .report-card .rc-pd tr.pd-header td{color:#1B2A4A;}
+  .report-card [style*="Lora"], .report-card h1, .report-card h2, .report-card h3{font-family:'Lora',serif !important;}
+
+  /* Dashboard */
+  .dash-head{display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:22px;}
+  .dash-hello{font-size:30px; font-weight:700; margin:0; color:#fff;}
+  .dash-sub{margin-top:6px; font-size:14.5px; color:var(--muted);}
+  .dash-date{display:flex; align-items:center; gap:12px; color:var(--muted);}
+  .dash-date svg{width:30px; height:30px; flex-shrink:0;}
+  .dash-date b{display:block; color:#fff; font-size:16px; font-weight:600;}
+  .dash-date span{font-size:13px;}
+
+  .hero-cards{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+  .hero-card{position:relative; overflow:hidden; border-radius:16px; padding:18px 20px 16px; color:#fff; min-height:136px;}
+  .hc-blue{background:linear-gradient(135deg,#1F6BFF,#0B4BD1);}
+  .hc-green{background:linear-gradient(135deg,#14B887,#0B8A66);}
+  .hc-purple{background:linear-gradient(135deg,#8B5CF6,#6535DD);}
+  .hc-orange{background:linear-gradient(135deg,#F59E0B,#D97008);}
+  .hero-card .chip{width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center;}
+  .hero-card .chip svg{width:20px; height:20px;}
+  .hero-card .lbl{margin-top:12px; font-size:14px; font-weight:500; opacity:.95;}
+  .hero-card .num{font-size:34px; font-weight:700; line-height:1.15; margin-top:2px;}
+  .hero-card .note{font-size:12.5px; opacity:.88; margin-top:4px;}
+  .hero-card .bg-ico{position:absolute; right:16px; bottom:14px; width:68px; height:68px; opacity:.26;}
+  .hero-card .bg-ico svg{width:100%; height:100%;}
+  .quick-actions{margin:18px 0 0;}
+
+  .dash-grid{display:grid; gap:16px; margin-top:16px;}
+  .dash-a{grid-template-columns:1.5fr 1fr 1fr;}
+  .dash-b{grid-template-columns:1fr 1.6fr 1fr;}
+  .dcard{padding:20px; min-width:0;}
+  .dc-title{display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:16.5px; font-weight:600; color:#fff; margin-bottom:14px;}
+  .dc-hint{font-size:12px; font-weight:400; color:var(--muted);}
+  .dc-link{font-size:12.5px; font-weight:500; color:#7FB0FF; cursor:pointer; background:none; border:none; font-family:inherit; padding:0;}
+  .chart-scroll{overflow-x:auto;}
+  .chart-scroll svg{display:block; width:100%; height:auto;}
+  .chart-scroll text{font-family:'Inter',sans-serif; fill:#8A9FBE; font-size:11.5px;}
+  .chart-empty{color:var(--muted); font-size:13px; padding:26px 0; text-align:center;}
+
+  .donut-wrap{display:flex; align-items:center; gap:18px; flex-wrap:wrap; justify-content:center;}
+  .donut-wrap svg{width:170px; height:170px; flex-shrink:0;}
+  .donut-wrap .c1{font-size:26px; font-weight:700; fill:#fff;}
+  .donut-wrap .c2{font-size:11.5px; fill:#8A9FBE;}
+  .legend{flex:1; min-width:150px; display:grid; gap:11px;}
+  .legend .row{display:flex; align-items:center; gap:9px; font-size:13px;}
+  .legend .dot2{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+  .legend .lg-n{margin-left:auto; font-weight:600; color:#fff;}
+  .legend .lg-p{width:38px; text-align:right; color:var(--muted);}
+
+  .act-item{display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--line);}
+  .act-item:last-child{border-bottom:none;}
+  .act-av{width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff;}
+  .act-msg{font-size:13px; color:#fff; line-height:1.35; overflow-wrap:anywhere;}
+  .act-meta{font-size:12px; color:var(--muted); margin-top:2px;}
+  .prog-item{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px;}
+  .prog-item:last-child{border-bottom:none;}
+
+  .term-row{display:flex; justify-content:space-between; gap:12px; padding:11px 0; border-bottom:1px solid var(--line); font-size:13.5px;}
+  .term-row:last-of-type{border-bottom:none;}
+  .term-row span:first-child{color:var(--muted);}
+  .term-row b{color:#fff; font-weight:600; text-align:right;}
+  .term-top{margin-top:14px; padding:14px; border-radius:12px; background:var(--panel-2);}
+  .term-top .tt-l{font-size:12px; color:var(--muted);}
+  .term-top .tt-v{font-size:15px; font-weight:700; color:#fff; margin-top:2px;}
+  .term-top .tt-s{font-size:12px; color:var(--muted);}
+  .term-top + .term-top{margin-top:10px;}
+
+  .motto-card{border-radius:16px; padding:26px 24px; display:flex; flex-direction:column; justify-content:flex-end; min-height:220px; color:#fff;
+    background:linear-gradient(160deg,rgba(7,19,38,.2),rgba(7,19,38,.85)), linear-gradient(135deg,#2F6BFF,#7C3AED 55%,#F59E0B);}
+  .motto-card .mq{font-size:22px; font-weight:600; line-height:1.3;}
+  .motto-card .mr{width:34px; height:3px; background:var(--gold); border-radius:2px; margin:14px 0 10px;}
+  .motto-card .ms{font-size:13px; opacity:.9;}
+
+  @media(max-width:1200px){
+    .hero-cards{grid-template-columns:repeat(2,1fr);}
+    .dash-a, .dash-b{grid-template-columns:1fr 1fr;}
+    .dc-enroll, .dc-perf{grid-column:1/-1;}
+  }
+  @media(max-width:820px){
+    .sidebar{height:auto; width:270px; max-width:84vw; background:var(--sidebar); padding-top:max(20px, env(safe-area-inset-top)); position:fixed;}
+    .topbar{padding:10px 14px; gap:10px; flex-wrap:wrap;}
+    .topbar-left{flex:1; order:1;}
+    .identity{order:2;}
+    .search-box{order:3; flex:1 1 100%; max-width:none; margin:0; height:44px;}
+    .context-pills{order:4; width:100%; flex-wrap:wrap;}
+    .context-pills .pill-select{flex:1 1 0; min-width:0;}
+    .identity .who{display:none;}
+    .dash-head{margin-bottom:16px;}
+    .dash-hello{font-size:24px;}
+    .hero-cards{gap:12px;}
+    .hero-card{padding:14px 14px 12px; min-height:118px; border-radius:14px;}
+    .hero-card .num{font-size:28px;}
+    .hero-card .bg-ico{width:46px; height:46px; right:10px; bottom:10px;}
+    .dash-a, .dash-b{grid-template-columns:1fr;}
+    .dcard{padding:16px;}
+    .motto-card{min-height:170px;}
+  }
+  /* Printing: only the report card(s), on white */
+  @media print{
+    body{background:#fff !important;}
+    .sidebar, .topbar, .sidebar-backdrop, .rc-actions{display:none !important;}
+    .app{display:block !important;}
+    .content{padding:0 !important; overflow:visible !important;}
+    #view-reports > *:not(#reportPreview){display:none !important;}
+    .report-card{border-radius:0;}
   }
 </style>
 </head>
@@ -359,9 +557,11 @@
 
   <div class="sidebar">
     <div class="brand">
-      <div class="crest">DH</div>
-      <div class="name" id="brandSchoolName">Divine Healer's<br>Basic School</div>
-      <div class="sub">Academic Records</div>
+      <div class="brand-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10.2 5 7.5 4.5 3.5 4.7v13.6c4-.2 6.7.3 8.5 1.7 1.8-1.4 4.5-1.9 8.5-1.7V4.7c-4-.2-6.7.3-8.5 1.8z"/><path d="M12 6.5V20"/></svg></div>
+      <div>
+        <div class="name" id="brandSchoolName">Divine Healer's Basic School</div>
+        <div class="sub" id="brandSub">Academic Records</div>
+      </div>
     </div>
     <div class="nav-group">
       <div class="nav-label">Overview</div>
@@ -389,6 +589,7 @@
       <div class="nav-item" data-view="settings"><span class="dot"></span>Settings</div>
       <div class="nav-item" data-view="audit"><span class="dot"></span>Audit Log</div>
     </div>
+    <div class="side-quote">&ldquo;Education is the most powerful weapon which you can use to change the world.&rdquo;<span>Nelson Mandela</span></div>
   </div>
 
   <div class="main">
@@ -397,14 +598,18 @@
         <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false">&#9776;</button>
         <h1 id="viewTitle">Dashboard</h1>
       </div>
+      <label class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+        <input id="globalSearch" type="search" placeholder="Search for a student…" autocomplete="off" onkeydown="if(event.key==='Enter') globalSearch(this.value)">
+      </label>
       <div class="context-pills">
         <span id="saveStatus" style="font-size:11px; color:var(--muted); margin-right:4px;"></span>
-        <button class="pill-select" id="identityBadge" style="cursor:pointer; font-weight:600;" onclick="openAccountMenu()">Not signed in</button>
         <select class="pill-select" id="ctxYear"></select>
         <select class="pill-select" id="ctxTerm">
           <option>First Term</option><option>Second Term</option><option>Third Term</option>
         </select>
       </div>
+      <button class="identity" id="identityBadge" onclick="openAccountMenu()">Not signed in</button>
     </div>
 
     <div class="content">
@@ -455,28 +660,51 @@
 
       <!-- DASHBOARD -->
       <div class="view active" id="view-dashboard">
-        <div class="grid cols-4">
-          <div class="card stat-card"><div class="label">Students</div><div class="value" id="statStudents">0</div><div class="sub">Active enrolment</div></div>
-          <div class="card stat-card"><div class="label">Classes</div><div class="value" id="statClasses">0</div><div class="sub">Configured</div></div>
-          <div class="card stat-card"><div class="label">Teachers</div><div class="value" id="statTeachers">0</div><div class="sub">On record</div></div>
-          <div class="card stat-card"><div class="label">Reports Ready</div><div class="value" id="statReports">0</div><div class="sub" id="statReportsSub">for current term</div></div>
+        <div class="dash-head">
+          <div>
+            <h2 class="dash-hello" id="dashGreeting">Welcome</h2>
+            <div class="dash-sub" id="dashSchoolLine"></div>
+          </div>
+          <div class="dash-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+            <div><b id="dashDate"></b><span id="dashTermLine"></span></div></div>
+        </div>
+        <div id="dashWarn"></div>
+
+        <div class="hero-cards">
+          <div class="hero-card hc-blue"><div class="chip" data-ico="students"></div><div class="lbl">Total Students</div><div class="num" id="statStudents">0</div><div class="note">Active enrolment</div><div class="bg-ico" data-ico="students"></div></div>
+          <div class="hero-card hc-green"><div class="chip" data-ico="teachers"></div><div class="lbl">Total Teachers</div><div class="num" id="statTeachers">0</div><div class="note">On record</div><div class="bg-ico" data-ico="teachers"></div></div>
+          <div class="hero-card hc-purple"><div class="chip" data-ico="classes"></div><div class="lbl">Classes</div><div class="num" id="statClasses">0</div><div class="note">Configured</div><div class="bg-ico" data-ico="classes"></div></div>
+          <div class="hero-card hc-orange"><div class="chip" data-ico="reports"></div><div class="lbl">Reports Ready</div><div class="num" id="statReports">0</div><div class="note" id="statReportsSub">for current term</div><div class="bg-ico" data-ico="reports"></div></div>
         </div>
 
-        <div class="section-title" style="margin-top:22px;">Quick actions</div>
         <div class="quick-actions">
           <div class="qa-btn" data-goto="students" data-action="add">+ Add Student</div>
           <div class="qa-btn" data-goto="scores">Enter Scores</div>
           <div class="qa-btn" data-goto="reports">Generate Reports</div>
-          <div class="qa-btn" data-goto="teachers" data-action="add">Manage Teachers</div>
-          <div class="qa-btn" data-goto="classes" data-action="add">Manage Classes</div>
+          <div class="qa-btn" data-goto="rankings">Top Performers</div>
+          <div class="qa-btn" data-goto="lookup">Student Lookup</div>
         </div>
 
-        <div class="section-title" style="margin-top:26px;">Class snapshot — current term</div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Class</th><th>Teacher</th><th>On Roll</th><th>Avg. Score</th><th>Reports Complete</th></tr></thead>
-            <tbody id="dashClassTable"></tbody>
-          </table>
+        <div class="dash-grid dash-a">
+          <div class="card dcard dc-enroll"><div class="dc-title">Students per Class<span class="dc-hint">Active enrolment</span></div><div id="dashEnroll"></div></div>
+          <div class="card dcard"><div class="dc-title">Student Distribution</div><div id="dashDist"></div></div>
+          <div class="card dcard"><div class="dc-title" id="dashActTitle">Recent Activities</div><div id="dashActivity"></div></div>
+        </div>
+
+        <div class="dash-grid dash-b">
+          <div class="card dcard"><div class="dc-title">This Term</div><div id="dashTerm"></div></div>
+          <div class="card dcard dc-perf"><div class="dc-title">Subject Performance<span class="dc-hint">School average, current term</span></div><div id="dashSubjects"></div></div>
+          <div class="motto-card" id="dashMotto"></div>
+        </div>
+
+        <div class="card dcard" style="margin-top:16px;">
+          <div class="dc-title">Class snapshot<span class="dc-hint">current term</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Class</th><th>Teacher</th><th>On Roll</th><th>Avg. Score</th><th>Reports Complete</th></tr></thead>
+              <tbody id="dashClassTable"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -831,8 +1059,8 @@ function openAccountMenu(){
 function renderIdentityBadge(){
   const el = document.getElementById('identityBadge');
   if(!el || !CURRENT_USER) return;
-  el.textContent = `${CURRENT_USER.name} (${CURRENT_USER.role === 'admin' ? 'Admin' : 'Teacher'})`;
-  el.style.color = 'var(--ink)';
+  const ini = (CURRENT_USER.name||'?').trim().split(/\s+/).slice(0,2).map(w=>w.charAt(0).toUpperCase()).join('');
+  el.innerHTML = `<span class="av">${esc(ini)}</span><span class="who">${esc(CURRENT_USER.name)}<small>${CURRENT_USER.role === 'admin' ? 'Admin' : 'Teacher'}</small></span>`;
 }
 
 /* ---------------------------------------------------------------
@@ -1058,10 +1286,12 @@ function computeClassResults(classId){
 const titles = {dashboard:'Dashboard', students:'Students', teachers:'Teachers', classes:'Classes',
   subjects:'Subjects', scores:'Score Entry', reports:'Report Generation', settings:'Settings', audit:'Audit Log', lookup:'Student Lookup', rankings:'Top Performers'};
 
+document.body.dataset.view = 'dashboard';
 function goto(view){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===view));
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+view));
   document.getElementById('viewTitle').textContent = titles[view];
+  document.body.dataset.view = view;
   window.scrollTo(0,0);
   renderAll();
   if(view==='lookup') initLookup();
@@ -1176,33 +1406,46 @@ async function ensureDashboardScoresLoaded(){
 }
 function renderDashboard(){
   // Scores for classes the user hasn't opened yet aren't loaded locally — fetch them in the
-  // background (once per context) and this re-renders itself when they arrive, so the
-  // averages/completion column don't stay blank.
+  // background (once per context) and this re-renders itself when they arrive.
   ensureDashboardScoresLoaded();
 
+  // --- greeting ---
+  const hr = new Date().getHours();
+  const part = hr<12 ? 'morning' : hr<17 ? 'afternoon' : 'evening';
+  let first = '';
+  if(CURRENT_USER && CURRENT_USER.name){
+    const bits = CURRENT_USER.name.trim().split(/\s+/);
+    first = /^(mr|mrs|ms|miss|dr|madam|sir|rev|pastor)\.?$/i.test(bits[0]) && bits[1] ? bits[1] : bits[0];
+  }
+  document.getElementById('dashGreeting').textContent = `Good ${part}${first? ', '+first : ''}`;
+  document.getElementById('dashSchoolLine').textContent = `Here's what's happening at ${DB.settings.schoolName || 'your school'} today.`;
+  document.getElementById('dashDate').textContent = new Date().toLocaleDateString('en-GB',{weekday:'short', day:'numeric', month:'short', year:'numeric'});
+  document.getElementById('dashTermLine').textContent = `${DB.settings.currentTerm || ''}${DB.settings.currentYear? ' • '+DB.settings.currentYear : ''}`;
+
+  // --- warnings ---
   const warnings = [];
   const unassigned = DB.classes.filter(c=>!c.teacherId);
   if(unassigned.length) warnings.push(`${unassigned.length} class(es) have no class teacher assigned: ${unassigned.map(c=>esc(c.name)).join(', ')}.`);
   if(!DB.settings.headmaster) warnings.push(`Headmaster's name is not set — add it in Settings before generating reports.`);
-  const existing = document.getElementById('dashWarnBanner');
-  if(existing) existing.remove();
-  if(warnings.length){
-    const banner = document.createElement('div');
-    banner.className = 'warn-banner'; banner.id = 'dashWarnBanner';
-    banner.innerHTML = `<div>⚠</div><div>${warnings.join('<br>')}</div>`;
-    document.querySelector('#view-dashboard .grid.cols-4').insertAdjacentElement('beforebegin', banner);
-  }
-  document.getElementById('statStudents').textContent = DB.students.filter(s=>s.status!=='Inactive').length;
+  document.getElementById('dashWarn').innerHTML = warnings.length
+    ? `<div class="warn-banner" style="margin-bottom:16px;"><div>⚠</div><div>${warnings.join('<br>')}</div></div>` : '';
+
+  // --- hero numbers ---
+  const active = DB.students.filter(s=>s.status!=='Inactive');
+  document.getElementById('statStudents').textContent = active.length;
   document.getElementById('statClasses').textContent = DB.classes.length;
   document.getElementById('statTeachers').textContent = DB.teachers.length;
 
+  // --- class snapshot table + completion count ---
   let completed=0;
+  const progress = [];
   const rows = DB.classes.map(c=>{
     const results = computeClassResults(c.id);
     const withScores = results.filter(r=>r.count>0);
     const avg = withScores.length? (withScores.reduce((s,r)=>s+r.avg,0)/withScores.length) : 0;
     const complete = results.length && results.every(r=>r.count===subjectsForClass(c.id).length && subjectsForClass(c.id).length>0);
     if(complete) completed++;
+    progress.push({name:c.name, complete:!!complete});
     const teacher = teacherById(c.teacherId);
     return `<tr>
       <td>${esc(c.name)}</td>
@@ -1214,8 +1457,176 @@ function renderDashboard(){
   }).join('');
   document.getElementById('dashClassTable').innerHTML = rows || `<tr><td colspan="5" style="color:var(--muted); text-align:center; padding:20px;">No classes configured yet.</td></tr>`;
   document.getElementById('statReports').textContent = completed;
-  document.getElementById('statReportsSub').textContent = `of ${DB.classes.length} classes ready — ${DB.settings.currentTerm}`;
+  document.getElementById('statReportsSub').textContent = `of ${DB.classes.length} classes ready`;
+
+  // --- charts & cards (all from real data) ---
+  document.getElementById('dashEnroll').innerHTML = dashEnrollChart();
+  document.getElementById('dashDist').innerHTML = dashDonut(active);
+  dashActivityCard(progress);
+  document.getElementById('dashTerm').innerHTML = dashTermCard();
+  document.getElementById('dashSubjects').innerHTML = dashSubjectBars();
+  const motto = (DB.settings.motto||'').trim();
+  document.getElementById('dashMotto').innerHTML = motto
+    ? `<div class="mq">&ldquo;${esc(motto)}&rdquo;</div><div class="mr"></div><div class="ms">${esc(DB.settings.schoolName||'')}</div>`
+    : `<div class="mq">${esc(DB.settings.schoolName || 'Your school')}</div><div class="mr"></div><div class="ms">Add a school motto in Settings to show it here.</div>`;
 }
+
+const DASH_COLORS = ['#3B82F6','#14B887','#F59E0B','#8B5CF6','#12C2E9','#F0617F','#A3E635','#FB923C'];
+function niceMax(v){ const steps=[1,2,5,10,20,25,50,100,200,250,500,1000]; const st = steps.find(x=>x*4>=v) || 1000; return st*4; }
+
+function dashEnrollChart(){
+  const data = DB.classes.map(c=>({name:c.name, n:studentsInClass(c.id).length}));
+  if(!data.length) return '<div class="chart-empty">Add classes to see enrolment.</div>';
+  const rot = data.length>6; const W = data.length>8 ? 560 : 480, H = 230, L = 38, R = 16, T = 18, B = rot ? 58 : 40;
+  const max = niceMax(Math.max(...data.map(d=>d.n), 1));
+  const x = i => data.length===1 ? (L+(W-L-R)/2) : L + i*((W-L-R)/(data.length-1));
+  const y = v => T + (H-T-B) * (1 - v/max);
+  const pts = data.map((d,i)=>[x(i),y(d.n)]);
+  const line = pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const area = line + ` L${pts[pts.length-1][0].toFixed(1)} ${(H-B)} L${pts[0][0].toFixed(1)} ${(H-B)} Z`;
+  let grid = '';
+  for(let k=0;k<=4;k++){ const v = max*k/4, yy = y(v);
+    grid += `<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="#1C3254" stroke-width="1"/><text x="${L-8}" y="${yy+4}" text-anchor="end">${Math.round(v)}</text>`; }
+  const labels = data.map((d,i)=>{ const nm = esc(d.name.length>9? d.name.slice(0,8)+'…' : d.name);
+    return rot ? `<text x="${x(i)}" y="${H-B+16}" text-anchor="end" transform="rotate(-38 ${x(i)} ${H-B+16})">${nm}</text>`
+               : `<text x="${x(i)}" y="${H-B+20}" text-anchor="middle">${nm}</text>`; }).join('');
+  const dots = data.map((d,i)=>`<circle cx="${pts[i][0]}" cy="${pts[i][1]}" r="4.5" fill="#0D1D37" stroke="#3B82F6" stroke-width="2.5"><title>${esc(d.name)}: ${d.n} student${d.n===1?'':'s'}</title></circle>`).join('');
+  return `<div class="chart-scroll"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Students per class">
+    <defs><linearGradient id="gEn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B82F6" stop-opacity=".45"/><stop offset="1" stop-color="#3B82F6" stop-opacity="0"/></linearGradient></defs>
+    ${grid}<path d="${area}" fill="url(#gEn)"/><path d="${line}" fill="none" stroke="#3B82F6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${dots}${labels}</svg></div>`;
+}
+
+function dashDonut(active){
+  if(!active.length) return '<div class="chart-empty">No students yet.</div>';
+  const order = ['Preschool','Lower Primary','Upper Primary','JHS','Other'];
+  const colors = {'Preschool':'#8B5CF6','Lower Primary':'#F59E0B','Upper Primary':'#3B82F6','JHS':'#14B887','Other':'#64748B'};
+  const counts = {}; order.forEach(l=>counts[l]=0);
+  active.forEach(st=>{ const c = classById(st.classId); counts[c? levelOfClass(c.name) : 'Other']++; });
+  const items = order.filter(l=>counts[l]>0);
+  const total = active.length, r = 62, circ = 2*Math.PI*r;
+  let off = 0;
+  const segs = items.map(l=>{
+    const len = circ * counts[l]/total;
+    const seg = `<circle r="${r}" cx="90" cy="90" fill="none" stroke="${colors[l]}" stroke-width="24" stroke-dasharray="${len.toFixed(2)} ${(circ-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 90 90)"><title>${l}: ${counts[l]}</title></circle>`;
+    off += len; return seg;
+  }).join('');
+  const legend = items.map(l=>`<div class="row"><span class="dot2" style="background:${colors[l]}"></span><span>${l}</span><span class="lg-n">${counts[l]}</span><span class="lg-p">${Math.round(100*counts[l]/total)}%</span></div>`).join('');
+  return `<div class="donut-wrap"><svg viewBox="0 0 180 180" role="img" aria-label="Students by school level">
+    <circle r="${r}" cx="90" cy="90" fill="none" stroke="#142849" stroke-width="24"/>${segs}
+    <text class="c1" x="90" y="92" text-anchor="middle">${total}</text><text class="c2" x="90" y="110" text-anchor="middle">Total Students</text></svg>
+    <div class="legend">${legend}</div></div>`;
+}
+
+function relTime(iso){
+  const t = new Date(iso).getTime(); if(isNaN(t)) return '';
+  const m = Math.round((Date.now()-t)/60000);
+  if(m<1) return 'just now'; if(m<60) return `${m} min ago`;
+  const h = Math.round(m/60); if(h<24) return `${h} hour${h===1?'':'s'} ago`;
+  const d = Math.round(h/24); if(d<8) return `${d} day${d===1?'':'s'} ago`;
+  return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+}
+function dashActivityCard(progress){
+  const title = document.getElementById('dashActTitle'), box = document.getElementById('dashActivity');
+  const isAdmin = CURRENT_USER && CURRENT_USER.role==='admin';
+  const log = (DB.auditLog||[]).slice(0,5);
+  if(isAdmin){
+    title.innerHTML = `Recent Activities<button class="dc-link" onclick="goto('audit')">View all →</button>`;
+    box.innerHTML = log.length ? log.map(e=>{
+      const ini = (e.userName||'?').trim().charAt(0).toUpperCase();
+      const col = DASH_COLORS[(ini.charCodeAt(0)||0) % DASH_COLORS.length];
+      return `<div class="act-item"><div class="act-av" style="background:${col}">${esc(ini)}</div><div><div class="act-msg">${esc(e.message)}</div><div class="act-meta">${esc(e.userName||'')} · ${relTime(e.ts)}</div></div></div>`;
+    }).join('') : '<div class="chart-empty">Changes made in the system will show up here.</div>';
+  }else{
+    title.textContent = 'Reports Progress';
+    box.innerHTML = progress.length ? progress.slice(0,7).map(p=>`<div class="prog-item"><span>${esc(p.name)}</span>${p.complete?'<span class="badge active">Complete</span>':'<span class="badge inactive">Pending</span>'}</div>`).join('') : '<div class="chart-empty">No classes yet.</div>';
+  }
+}
+
+function fmtDateLoose(v){
+  if(!v) return null;
+  const d = /^\d{4}-\d{2}-\d{2}/.test(v) ? new Date(v) : null;
+  return d && !isNaN(d) ? d.toLocaleDateString('en-GB',{day:'numeric', month:'short', year:'numeric'}) : String(v);
+}
+function dashTermCard(){
+  const ti = getTermInfo();
+  const row = (l,v)=>`<div class="term-row"><span>${l}</span><b>${v? esc(v) : '<span style="color:var(--muted); font-weight:400;">Not set</span>'}</b></div>`;
+  // top performers from whatever scores are loaded for this term
+  const all = [];
+  const cstats = [];
+  DB.classes.forEach(c=>{
+    const res = computeClassResults(c.id).filter(r=>r.count>0);
+    res.forEach(r=>all.push({name:r.student.name, cls:c.name, avg:r.avg}));
+    if(res.length) cstats.push({name:c.name, avg:res.reduce((a,r)=>a+r.avg,0)/res.length});
+  });
+  all.sort((a,b)=>b.avg-a.avg); cstats.sort((a,b)=>b.avg-a.avg);
+  const tops = all.length ? `
+    <div class="term-top"><div class="tt-l">Best student</div><div class="tt-v">${esc(all[0].name)}</div><div class="tt-s">${esc(all[0].cls)} · average ${all[0].avg.toFixed(1)}</div></div>
+    <div class="term-top"><div class="tt-l">Best class</div><div class="tt-v">${esc(cstats[0].name)}</div><div class="tt-s">class average ${cstats[0].avg.toFixed(1)}</div></div>
+    <div style="margin-top:12px;"><button class="dc-link" onclick="goto('rankings')">See all rankings →</button></div>`
+    : `<div class="chart-empty" style="padding:18px 0 4px;">Rankings appear once scores are entered.</div>`;
+  return row('Term', `${DB.settings.currentTerm}, ${DB.settings.currentYear}`)
+    + row('School days', ti.totalSchoolDays) + row('Reports issued', fmtDateLoose(ti.dateOfIssue)) + row('Next term begins', fmtDateLoose(ti.nextTermBegins)) + tops;
+}
+
+function dashSubjectBars(){
+  const sub = {};
+  DB.classes.forEach(c=>{
+    const cs = DB.scores[scoreKey(c.id)] || {};
+    subjectsForClass(c.id).forEach(sj=>{
+      studentsInClass(c.id).forEach(st=>{
+        const x = (cs[st.id]||{})[sj.id]; if(!x) return;
+        const has = (x.sba!==undefined && x.sba!=='') || (x.exam!==undefined && x.exam!=='');
+        if(!has) return;
+        const k = sj.name.trim().toLowerCase();
+        const o = sub[k] = sub[k] || {name:sj.name.trim(), sum:0, n:0};
+        o.sum += (Number(x.sba)||0)+(Number(x.exam)||0); o.n++;
+      });
+    });
+  });
+  const list = Object.values(sub).map(o=>({name:o.name, avg:o.sum/o.n})).sort((a,b)=>a.name.localeCompare(b.name));
+  if(!list.length) return '<div class="chart-empty">Subject averages appear once scores are entered.</div>';
+  const W = Math.max(420, list.length*74), H = 290, L = 34, R = 10, T = 26, B = 46;
+  const bw = Math.min(40, (W-L-R)/list.length*0.55);
+  const step = (W-L-R)/list.length;
+  const y = v => T + (H-T-B)*(1-v/100);
+  let grid=''; for(let k=0;k<=5;k++){ const v=k*20, yy=y(v); grid += `<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="#1C3254"/><text x="${L-7}" y="${yy+4}" text-anchor="end">${v}</text>`; }
+  const bars = list.map((d,i)=>{
+    const cx = L + step*i + step/2, top = y(Math.min(d.avg,100)), col = DASH_COLORS[i%DASH_COLORS.length];
+    const nm = d.name.length>11 ? d.name.slice(0,10)+'…' : d.name;
+    return `<path d="M${cx-bw/2} ${H-B} V${top+6} Q${cx-bw/2} ${top} ${cx-bw/2+6} ${top} H${cx+bw/2-6} Q${cx+bw/2} ${top} ${cx+bw/2} ${top+6} V${H-B} Z" fill="${col}"><title>${esc(d.name)}: ${d.avg.toFixed(1)}</title></path>
+      <text x="${cx}" y="${top-7}" text-anchor="middle" style="fill:#fff; font-weight:600;">${Math.round(d.avg)}</text>
+      <text x="${cx}" y="${H-B+18}" text-anchor="middle">${esc(nm)}</text>`;
+  }).join('');
+  return `<div class="chart-scroll"><svg viewBox="0 0 ${W} ${H}" style="min-width:${list.length>5?W:0}px" role="img" aria-label="Average score per subject">${grid}${bars}</svg></div>`;
+}
+
+function globalSearch(q){
+  q = (q||'').trim(); if(!q) return;
+  goto('lookup');
+  document.getElementById('lkSearch').value = q;
+  lkSearchChanged();
+  const ql = q.toLowerCase();
+  const hits = DB.students.filter(st=>(st.name||'').toLowerCase().includes(ql) || (st.admissionNo||'').toString().toLowerCase().includes(ql));
+  if(hits.length===1) lkPick(hits[0].id);
+  document.getElementById('globalSearch').value = '';
+}
+
+const NAV_ICONS = {
+  dashboard:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+  students:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="9" r="2.4"/><path d="M17 14.2c2.4 0 4.2 1.8 4.2 4.3"/>',
+  teachers:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20l4-4 4 4M7 9h6M7 12h4"/>',
+  lookup:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  classes:'<path d="M4 20V8l8-4 8 4v12"/><path d="M9 20v-6h6v6"/>',
+  subjects:'<path d="M5 4h10a3 3 0 013 3v13H8a3 3 0 01-3-3V4z"/><path d="M5 17a3 3 0 013-3h10"/>',
+  scores:'<path d="M4 20l1-4L16 5l3 3L8 19l-4 1z"/><path d="M14 7l3 3"/>',
+  rankings:'<path d="M8 4h8v5a4 4 0 01-8 0V4z"/><path d="M8 6H4v1a3 3 0 003 3M16 6h4v1a3 3 0 01-3 3M12 13v4M8 20h8M9.5 17h5"/>',
+  reports:'<path d="M6 3h8l4 4v14H6V3z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+  audit:'<path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/>'
+};
+function navIcon(name){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${NAV_ICONS[name]||''}</svg>`; }
+document.querySelectorAll('.nav-item .dot').forEach(d=>{ d.outerHTML = navIcon(d.parentElement.dataset.view); });
+document.querySelectorAll('[data-ico]').forEach(el=>{ el.innerHTML = navIcon(el.dataset.ico); });
 
 /* ---------------------------------------------------------------
    STUDENTS
@@ -2081,7 +2492,7 @@ function lkSearchChanged(){
   if(!hits.length){ box.innerHTML = '<div style="font-size:12.5px; color:var(--muted);">No student matches that search.</div>'; return; }
   box.innerHTML = hits.map(st=>{
     const c = classById(st.classId);
-    return `<div class="nav-item" style="color:var(--text); border:1px solid var(--line); border-radius:3px; margin-bottom:6px; background:#fff;" onclick="lkPick('${st.id}')">
+    return `<div class="nav-item" style="color:var(--text); border:1px solid var(--line); border-radius:3px; margin-bottom:6px; background:var(--panel-2);" onclick="lkPick('${st.id}')">
       <div style="flex:1;"><b>${esc(st.name)}</b><div style="font-size:11.5px; color:var(--muted);">${esc(st.admissionNo||'')} · ${c?esc(c.name):'No class'}${st.status==='Inactive'?' · Inactive':''}</div></div>
     </div>`;
   }).join('');
@@ -2191,7 +2602,7 @@ function lkCompareHtml(results){
   const cell = (r,i)=>{ const x = r && r.subjectRows[i]; return `<td>${x && x.has ? `<b>${x.total}</b> <span class="badge ${gradeBadgeClass(x.grade)}">${esc(x.grade)}</span>` : '—'}</td>`; };
   const body = subs.map((sub,i)=>`<tr><td>${esc(sub.name)}</td>${results.map(x=>cell(x.r,i)).join('')}</tr>`).join('');
   const sum = (f)=>results.map(x=> x.r && x.r.count ? f(x.r) : '—');
-  const row = (label, vals)=>`<tr style="background:#FBF8EF;"><td><b>${label}</b></td>${vals.map(v=>`<td><b>${v}</b></td>`).join('')}</tr>`;
+  const row = (label, vals)=>`<tr style="background:var(--panel-2);"><td><b>${label}</b></td>${vals.map(v=>`<td><b>${v}</b></td>`).join('')}</tr>`;
   if(!results.some(x=>x.r && x.r.count)) return `<div class="card empty-state"><div class="icon">∅</div>No scores recorded for this year yet.</div>`;
   return `<div class="card"><div class="section-title">All terms <span class="hint">score and grade per subject</span></div>
     <div class="table-wrap"><table style="min-width:0;">
@@ -2498,7 +2909,8 @@ function renderAudit(){
    RENDER ALL
 --------------------------------------------------------------- */
 function renderAll(){
-  document.getElementById('brandSchoolName').innerHTML = esc(DB.settings.schoolName || "School").split(' ').slice(0,3).join(' ');
+  document.getElementById('brandSchoolName').textContent = DB.settings.schoolName || 'School';
+  document.getElementById('brandSub').textContent = DB.settings.motto || 'Academic Records';
   renderContextSelectors();
   renderIdentityBadge();
   renderDashboard();
