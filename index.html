@@ -296,6 +296,19 @@
     .rc-actions .btn{width:100%;}
   }
 
+
+  .rk-tabs{display:flex; gap:6px; margin-top:14px; flex-wrap:wrap;}
+  .rk-tab{font-family:'Inter',sans-serif; font-size:12.8px; font-weight:600; padding:8px 14px; border:1px solid var(--line);
+    background:var(--paper); color:var(--ink); border-radius:var(--radius); cursor:pointer;}
+  .rk-tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .rk-medal{display:inline-flex; width:24px; height:24px; border-radius:50%; align-items:center; justify-content:center;
+    font-size:11.5px; font-weight:700; background:#F1EBDA; color:var(--ink);}
+  .rk-medal.m1{background:var(--gold); color:#fff;}
+  .rk-medal.m2{background:#B9B9B9; color:#fff;}
+  .rk-medal.m3{background:#B27A4B; color:#fff;}
+  .rk-level{font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--gold);}
+  @media(max-width:820px){ .rk-tab{flex:1 1 calc(50% - 6px);} }
+
   @media(max-width:420px){
     .grid.cols-4, .grid.cols-3{grid-template-columns:1fr 1fr;}
     .stat-card .label{font-size:10px;}
@@ -365,6 +378,7 @@
       <div class="nav-item" data-view="classes"><span class="dot"></span>Classes</div>
       <div class="nav-item" data-view="subjects"><span class="dot"></span>Subjects</div>
       <div class="nav-item" data-view="scores"><span class="dot"></span>Score Entry</div>
+      <div class="nav-item" data-view="rankings"><span class="dot"></span>Top Performers</div>
     </div>
     <div class="nav-group">
       <div class="nav-label">Output</div>
@@ -418,6 +432,25 @@
           <div id="lkMatches" style="margin-top:10px;"></div>
         </div>
         <div id="lkResult" style="margin-top:16px;"></div>
+      </div>
+
+      <!-- TOP PERFORMERS -->
+      <div class="view" id="view-rankings">
+        <div class="card">
+          <div class="form-grid cols-3">
+            <div class="field"><label>Academic year</label><select id="rkYear" onchange="rkLoad()"></select></div>
+            <div class="field"><label>Term</label>
+              <select id="rkTerm" onchange="rkLoad()"><option>First Term</option><option>Second Term</option><option>Third Term</option></select></div>
+            <div class="field"><label>Show</label><select id="rkScope" onchange="rkRender()"></select></div>
+          </div>
+          <div class="rk-tabs" id="rkTabs">
+            <button class="rk-tab active" data-tab="overview" onclick="rkTab('overview')">Overview</button>
+            <button class="rk-tab" data-tab="students" onclick="rkTab('students')">Best students</button>
+            <button class="rk-tab" data-tab="subjects" onclick="rkTab('subjects')">By subject</button>
+            <button class="rk-tab" data-tab="classes" onclick="rkTab('classes')">Best class</button>
+          </div>
+        </div>
+        <div id="rkBody" style="margin-top:16px;"></div>
       </div>
 
       <!-- DASHBOARD -->
@@ -1023,7 +1056,7 @@ function computeClassResults(classId){
    NAVIGATION
 --------------------------------------------------------------- */
 const titles = {dashboard:'Dashboard', students:'Students', teachers:'Teachers', classes:'Classes',
-  subjects:'Subjects', scores:'Score Entry', reports:'Report Generation', settings:'Settings', audit:'Audit Log', lookup:'Student Lookup'};
+  subjects:'Subjects', scores:'Score Entry', reports:'Report Generation', settings:'Settings', audit:'Audit Log', lookup:'Student Lookup', rankings:'Top Performers'};
 
 function goto(view){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===view));
@@ -1032,6 +1065,7 @@ function goto(view){
   window.scrollTo(0,0);
   renderAll();
   if(view==='lookup') initLookup();
+  if(view==='rankings'){ LK.cache = {}; initRankings(); }
 }
 document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click', ()=>{ goto(n.dataset.view); setNav(false); }));
 /* ---------------- Mobile menu ---------------- */
@@ -2167,6 +2201,187 @@ function lkCompareHtml(results){
         ${row('Average', sum(r=>r.avg.toFixed(1)))}
         ${row('Position', sum(r=>`${r.rank}/${r.rollCount}`))}
       </tbody></table></div></div>`;
+}
+
+/* ---------------------------------------------------------------
+   TOP PERFORMERS — best students, subjects and classes by school level
+--------------------------------------------------------------- */
+const RK_LEVELS = ['Preschool','Lower Primary','Upper Primary','JHS'];
+const RK_WORDS = {one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9};
+let RK = { data:null, tab:'overview', failed:[] };
+
+// Works out the school level from the class name (e.g. "KG 2", "Basic 5", "JHS 1").
+function levelOfClass(name){
+  const n = (name||'').toLowerCase();
+  if(/nurser|cr[eè]che|\bkg\b|kinder|pre-?school|\bpre\b|\bk\.g/.test(n)) return 'Preschool';
+  if(/jhs|j\.h\.s|junior high/.test(n)) return 'JHS';
+  let num = (n.match(/\d+/)||[])[0];
+  if(!num){ const w = Object.keys(RK_WORDS).find(w=>new RegExp('\\b'+w+'\\b').test(n)); if(w) num = RK_WORDS[w]; }
+  num = parseInt(num,10);
+  if(num>=1 && num<=3) return 'Lower Primary';
+  if(num>=4 && num<=6) return 'Upper Primary';
+  if(num>=7 && num<=9) return 'JHS';
+  return 'Other';
+}
+
+function initRankings(){
+  const ys = DB.settings.years && DB.settings.years.length ? DB.settings.years : [DB.settings.currentYear];
+  const yEl = document.getElementById('rkYear'), tEl = document.getElementById('rkTerm');
+  const pY = yEl.value, pT = tEl.value;
+  yEl.innerHTML = ys.map(y=>`<option>${esc(y)}</option>`).join('');
+  yEl.value = ys.includes(pY) ? pY : (DB.settings.currentYear || ys[0]);
+  tEl.value = pT || DB.settings.currentTerm || 'First Term';
+  const sEl = document.getElementById('rkScope'); const pS = sEl.value || 'all';
+  const levels = [...new Set(DB.classes.map(c=>levelOfClass(c.name)))];
+  const orderedLevels = [...RK_LEVELS.filter(l=>levels.includes(l)), ...(levels.includes('Other')?['Other']:[])];
+  sEl.innerHTML = '<option value="all">Whole school</option>'
+    + '<optgroup label="School level">' + orderedLevels.map(l=>`<option value="lvl:${l}">${l}</option>`).join('') + '</optgroup>'
+    + '<optgroup label="Single class">' + DB.classes.map(c=>`<option value="cls:${c.id}">${esc(c.name)}</option>`).join('') + '</optgroup>';
+  sEl.value = [...sEl.options].some(o=>o.value===pS) ? pS : 'all';
+  rkLoad();
+}
+
+async function rkLoad(){
+  const body = document.getElementById('rkBody');
+  const year = document.getElementById('rkYear').value, term = document.getElementById('rkTerm').value;
+  if(!DB.classes.length){ body.innerHTML = '<div class="card empty-state">Add classes and scores first.</div>'; return; }
+  body.innerHTML = '<div class="card empty-state">Working out the rankings…</div>';
+  RK.failed = [];
+  const classes = [];
+  await Promise.all(DB.classes.map(async c=>{
+    try{
+      const nested = await lkFetchTerm(c.id, year, term);
+      classes.push({ cls:c, level:levelOfClass(c.name), rows: rkRows(c.id, nested) });
+    }catch(e){ RK.failed.push(c.name); }
+  }));
+  classes.sort((a,b)=>DB.classes.indexOf(a.cls)-DB.classes.indexOf(b.cls));
+  RK.data = { year, term, classes };
+  rkRender();
+}
+
+function rkRows(classId, nested){
+  const subs = subjectsForClass(classId);
+  return studentsInClass(classId).map(st=>{
+    const sc = nested[st.id] || {};
+    let total=0, count=0;
+    const subjectRows = subs.map(sub=>{
+      const x = sc[sub.id] || {};
+      const has = (x.sba!==undefined && x.sba!=='') || (x.exam!==undefined && x.exam!=='');
+      const t = (Number(x.sba)||0) + (Number(x.exam)||0);
+      if(has){ total+=t; count++; }
+      return { sub, has, total:t };
+    });
+    return { st, subjectRows, total, count, avg: count? total/count : 0 };
+  });
+}
+
+function rkTab(t){
+  RK.tab = t;
+  document.querySelectorAll('#rkTabs .rk-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===t));
+  rkRender();
+}
+
+function rkScoped(){
+  const v = document.getElementById('rkScope').value;
+  return RK.data.classes.filter(c=> v==='all' || (v.startsWith('lvl:') && c.level===v.slice(4)) || (v.startsWith('cls:') && c.cls.id===v.slice(4)));
+}
+function rkStudents(classList){
+  const out = [];
+  classList.forEach(c=>c.rows.forEach(r=>{ if(r.count>0) out.push({ ...r, cls:c.cls, level:c.level }); }));
+  return out.sort((a,b)=> b.avg-a.avg || b.total-a.total);
+}
+function rkClassStats(classList){
+  return classList.map(c=>{
+    const scored = c.rows.filter(r=>r.count>0);
+    const avg = scored.length ? scored.reduce((a,r)=>a+r.avg,0)/scored.length : null;
+    return { ...c, scored: scored.length, roll: c.rows.length, avg };
+  }).filter(c=>c.avg!==null).sort((a,b)=>b.avg-a.avg);
+}
+const rkMedal = i => `<span class="rk-medal ${i<3?'m'+(i+1):''}">${i+1}</span>`;
+
+function rkRender(){
+  if(!RK.data) return;
+  const body = document.getElementById('rkBody');
+  const fails = RK.failed.length ? `<div class="warn-banner"><div>⚠</div><div>Couldn't load scores for: ${RK.failed.map(esc).join(', ')}. They are left out below.</div></div>` : '';
+  const { year, term } = RK.data;
+  const scoped = rkScoped();
+  if(!rkStudents(scoped).length){
+    body.innerHTML = fails + `<div class="card empty-state"><div class="icon">∅</div>No scores recorded for ${esc(term)}, ${esc(year)} here.</div>`;
+    return;
+  }
+  const html = RK.tab==='overview' ? rkOverview() : RK.tab==='students' ? rkBestStudents(scoped)
+             : RK.tab==='subjects' ? rkSubjects(scoped) : rkBestClass(scoped);
+  body.innerHTML = fails + html;
+  if(RK.tab==='subjects'){ const el=document.getElementById('rkSubject'); if(el) el.value = RK.subject || ''; }
+}
+
+function rkOverview(){
+  const all = RK.data.classes;
+  const topS = rkStudents(all)[0], topC = rkClassStats(all)[0];
+  const levels = [...RK_LEVELS, 'Other'].filter(l=>all.some(c=>c.level===l));
+  const head = `<div class="grid cols-2" style="margin-bottom:14px;">
+    <div class="card"><div class="rk-level">Best student in the school</div>
+      <div style="font-family:'Lora',serif; font-size:19px; font-weight:700; margin-top:4px;">${esc(topS.st.name)}</div>
+      <div style="font-size:12.5px; color:var(--muted);">${esc(topS.cls.name)} · average ${topS.avg.toFixed(1)}</div></div>
+    <div class="card"><div class="rk-level">Best class in the school</div>
+      <div style="font-family:'Lora',serif; font-size:19px; font-weight:700; margin-top:4px;">${topC?esc(topC.cls.name):'—'}</div>
+      <div style="font-size:12.5px; color:var(--muted);">${topC?`class average ${topC.avg.toFixed(1)}`:''}</div></div></div>`;
+  const cards = levels.map(l=>{
+    const cl = all.filter(c=>c.level===l);
+    const s = rkStudents(cl)[0], c = rkClassStats(cl)[0];
+    if(!s) return `<div class="card"><div class="rk-level">${l}</div><div style="color:var(--muted); font-size:12.5px; margin-top:6px;">No scores yet</div></div>`;
+    return `<div class="card"><div class="rk-level">${l}</div>
+      <div style="margin-top:8px; font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Best student</div>
+      <div style="font-weight:700; font-size:15px;">${esc(s.st.name)}</div>
+      <div style="font-size:12px; color:var(--muted);">${esc(s.cls.name)} · avg ${s.avg.toFixed(1)}</div>
+      <div style="margin-top:10px; font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Best class</div>
+      <div style="font-weight:700; font-size:15px;">${c?esc(c.cls.name):'—'}</div>
+      <div style="font-size:12px; color:var(--muted);">${c?`avg ${c.avg.toFixed(1)} · ${c.scored}/${c.roll} students scored`:''}</div></div>`;
+  }).join('');
+  return head + `<div class="grid cols-2">${cards}</div>
+    <div class="kbd-hint">${esc(RK.data.term)}, ${esc(RK.data.year)}. Levels come from class names: KG/Nursery = Preschool, Basic 1–3 = Lower Primary, Basic 4–6 = Upper Primary, Basic 7–9 or JHS = JHS.</div>`;
+}
+
+function rkBestStudents(scoped){
+  const list = rkStudents(scoped).slice(0,10);
+  const rows = list.map((r,i)=>`<tr><td>${rkMedal(i)}</td><td><b>${esc(r.st.name)}</b></td><td>${esc(r.cls.name)}</td>
+    <td>${r.total}</td><td><b>${r.avg.toFixed(1)}</b></td></tr>`).join('');
+  return `<div class="card"><div class="section-title">Top ${list.length} students <span class="hint">ranked by average score</span></div>
+    <div class="table-wrap"><table style="min-width:0;"><thead><tr><th></th><th>Student</th><th>Class</th><th>Total</th><th>Average</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+
+function rkSubjects(scoped){
+  // group subjects of the same name across classes (e.g. "English" in every class)
+  const map = {};
+  scoped.forEach(c=>c.rows.forEach(r=>r.subjectRows.forEach(x=>{
+    if(!x.has) return;
+    const key = x.sub.name.trim().toLowerCase();
+    (map[key] = map[key] || { name:x.sub.name.trim(), entries:[] }).entries.push({ st:r.st, cls:c.cls, total:x.total });
+  })));
+  const subjects = Object.values(map).sort((a,b)=>a.name.localeCompare(b.name));
+  Object.values(map).forEach(m=>m.entries.sort((a,b)=>b.total-a.total));
+  const pick = RK.subject && map[RK.subject] ? RK.subject : '';
+  const opts = `<option value="">Best in every subject</option>` + subjects.map(m=>`<option value="${esc(m.name.toLowerCase())}">${esc(m.name)}</option>`).join('');
+  const chooser = `<div class="card" style="margin-bottom:14px;"><div class="field"><label>Subject</label>
+    <select id="rkSubject" onchange="RK.subject=this.value; rkRender();">${opts}</select></div></div>`;
+  if(!pick){
+    const rows = subjects.map(m=>{ const t=m.entries[0]; return `<tr><td><b>${esc(m.name)}</b></td><td>${esc(t.st.name)}</td><td>${esc(t.cls.name)}</td><td><b>${t.total}</b></td></tr>`; }).join('');
+    return chooser + `<div class="card"><div class="section-title">Best student in each subject <span class="hint">score out of 100</span></div>
+      <div class="table-wrap"><table style="min-width:0;"><thead><tr><th>Subject</th><th>Student</th><th>Class</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }
+  const m = map[pick];
+  const rows = m.entries.slice(0,10).map((t,i)=>`<tr><td>${rkMedal(i)}</td><td><b>${esc(t.st.name)}</b></td><td>${esc(t.cls.name)}</td><td><b>${t.total}</b></td></tr>`).join('');
+  return chooser + `<div class="card"><div class="section-title">Top in ${esc(m.name)}</div>
+    <div class="table-wrap"><table style="min-width:0;"><thead><tr><th></th><th>Student</th><th>Class</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+
+function rkBestClass(scoped){
+  const stats = rkClassStats(scoped);
+  const rows = stats.map((c,i)=>`<tr><td>${rkMedal(i)}</td><td><b>${esc(c.cls.name)}</b></td><td>${c.level}</td>
+    <td><b>${c.avg.toFixed(1)}</b></td><td>${c.scored}/${c.roll}</td></tr>`).join('');
+  return `<div class="card"><div class="section-title">Class ranking <span class="hint">average of student averages</span></div>
+    <div class="table-wrap"><table style="min-width:0;"><thead><tr><th></th><th>Class</th><th>Level</th><th>Average</th><th>Scored</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="kbd-hint">Only students with at least one score count toward a class average.</div></div>`;
 }
 
 /* ---------------------------------------------------------------
