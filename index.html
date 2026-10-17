@@ -358,6 +358,7 @@
       <div class="nav-label">People</div>
       <div class="nav-item" data-view="students"><span class="dot"></span>Students</div>
       <div class="nav-item" data-view="teachers"><span class="dot"></span>Teachers</div>
+      <div class="nav-item" data-view="lookup"><span class="dot"></span>Student Lookup</div>
     </div>
     <div class="nav-group">
       <div class="nav-label">Academics</div>
@@ -393,6 +394,31 @@
     </div>
 
     <div class="content">
+
+      <!-- STUDENT LOOKUP -->
+      <div class="view" id="view-lookup">
+        <div class="card">
+          <div class="form-grid cols-3">
+            <div class="field" style="grid-column:span 1;">
+              <label>Search student</label>
+              <input id="lkSearch" placeholder="Name or admission no." autocomplete="off" oninput="lkSearchChanged()">
+            </div>
+            <div class="field">
+              <label>Academic year</label>
+              <select id="lkYear" onchange="lkLoad()"></select>
+            </div>
+            <div class="field">
+              <label>Term</label>
+              <select id="lkTerm" onchange="lkLoad()">
+                <option>First Term</option><option>Second Term</option><option>Third Term</option>
+                <option value="ALL">All terms (compare)</option>
+              </select>
+            </div>
+          </div>
+          <div id="lkMatches" style="margin-top:10px;"></div>
+        </div>
+        <div id="lkResult" style="margin-top:16px;"></div>
+      </div>
 
       <!-- DASHBOARD -->
       <div class="view active" id="view-dashboard">
@@ -997,7 +1023,7 @@ function computeClassResults(classId){
    NAVIGATION
 --------------------------------------------------------------- */
 const titles = {dashboard:'Dashboard', students:'Students', teachers:'Teachers', classes:'Classes',
-  subjects:'Subjects', scores:'Score Entry', reports:'Report Generation', settings:'Settings', audit:'Audit Log'};
+  subjects:'Subjects', scores:'Score Entry', reports:'Report Generation', settings:'Settings', audit:'Audit Log', lookup:'Student Lookup'};
 
 function goto(view){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===view));
@@ -1005,6 +1031,7 @@ function goto(view){
   document.getElementById('viewTitle').textContent = titles[view];
   window.scrollTo(0,0);
   renderAll();
+  if(view==='lookup') initLookup();
 }
 document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click', ()=>{ goto(n.dataset.view); setNav(false); }));
 /* ---------------- Mobile menu ---------------- */
@@ -1988,6 +2015,158 @@ function buildReportHTML(classId, studentId){
   previewReport(classId, studentId);
   const html = document.getElementById('reportPreview').querySelector('.report-card').outerHTML;
   return html;
+}
+
+/* ---------------------------------------------------------------
+   STUDENT LOOKUP — search one student, see scores for any term/year
+--------------------------------------------------------------- */
+let LK = { studentId:'', cache:{} };
+
+function initLookup(){
+  LK.cache = {}; // always re-fetch on visiting, so edits made in Score Entry show up
+  const ys = DB.settings.years && DB.settings.years.length ? DB.settings.years : [DB.settings.currentYear];
+  const yEl = document.getElementById('lkYear'), tEl = document.getElementById('lkTerm');
+  const prevY = yEl.value, prevT = tEl.value;
+  yEl.innerHTML = ys.map(y=>`<option>${esc(y)}</option>`).join('');
+  yEl.value = ys.includes(prevY) ? prevY : (DB.settings.currentYear || ys[0]);
+  tEl.value = prevT || DB.settings.currentTerm || 'First Term';
+  lkSearchChanged();
+  if(LK.studentId) lkLoad();
+}
+
+function lkSearchChanged(){
+  const q = document.getElementById('lkSearch').value.trim().toLowerCase();
+  const box = document.getElementById('lkMatches');
+  if(!q){
+    box.innerHTML = LK.studentId ? '' : '<div style="font-size:12px; color:var(--muted);">Type a name or admission number to find a student.</div>';
+    return;
+  }
+  const hits = DB.students.filter(st=>
+    (st.name||'').toLowerCase().includes(q) || (st.admissionNo||'').toString().toLowerCase().includes(q)
+  ).slice(0,8);
+  if(!hits.length){ box.innerHTML = '<div style="font-size:12.5px; color:var(--muted);">No student matches that search.</div>'; return; }
+  box.innerHTML = hits.map(st=>{
+    const c = classById(st.classId);
+    return `<div class="nav-item" style="color:var(--text); border:1px solid var(--line); border-radius:3px; margin-bottom:6px; background:#fff;" onclick="lkPick('${st.id}')">
+      <div style="flex:1;"><b>${esc(st.name)}</b><div style="font-size:11.5px; color:var(--muted);">${esc(st.admissionNo||'')} · ${c?esc(c.name):'No class'}${st.status==='Inactive'?' · Inactive':''}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function lkPick(id){
+  LK.studentId = id;
+  const st = DB.students.find(s=>s.id===id);
+  document.getElementById('lkSearch').value = st ? st.name : '';
+  document.getElementById('lkMatches').innerHTML = '';
+  lkLoad();
+}
+
+async function lkFetchTerm(classId, year, term){
+  const k = `${year}|${term}|${classId}`;
+  if(LK.cache[k]) return LK.cache[k];
+  const data = await api(`/api/scores?year=${encodeURIComponent(year)}&term=${encodeURIComponent(term)}&classId=${classId}`);
+  const nested = {};
+  data.scores.forEach(r=>{
+    const stu = normId(r.studentId), sub = normId(r.subjectId);
+    nested[stu] = nested[stu] || {};
+    nested[stu][sub] = { sba: r.sba ?? '', exam: r.exam ?? '' };
+  });
+  LK.cache[k] = nested;
+  return nested;
+}
+
+// Same maths as the class results (total, average, position), but for any year/term.
+function lkCompute(classId, nested, studentId){
+  const subs = subjectsForClass(classId);
+  const roster = studentsInClass(classId);
+  const rows = roster.map(st=>{
+    const sc = nested[st.id] || {};
+    let total=0, count=0;
+    const subjectRows = subs.map(sub=>{
+      const x = sc[sub.id] || {};
+      const has = (x.sba!==undefined && x.sba!=='') || (x.exam!==undefined && x.exam!=='');
+      const sba = Number(x.sba)||0, exam = Number(x.exam)||0, t = sba+exam;
+      if(has){ total+=t; count++; }
+      const g = gradeFor(t);
+      return { sub, has, sba, exam, total:t, grade:g.grade, remark:g.remark };
+    });
+    return { st, subjectRows, total, count, avg: count? total/count : 0 };
+  });
+  const sorted = [...rows].sort((a,b)=>b.avg-a.avg);
+  let lastAvg=null, lastRank=0;
+  sorted.forEach((r,i)=>{ if(r.avg===lastAvg) r.rank=lastRank; else { r.rank=i+1; lastRank=i+1; lastAvg=r.avg; } });
+  const mine = rows.find(r=>r.st.id===studentId);
+  if(mine) mine.rollCount = roster.length;
+  return mine;
+}
+
+async function lkLoad(){
+  const out = document.getElementById('lkResult');
+  const st = DB.students.find(s=>s.id===LK.studentId);
+  if(!st){ out.innerHTML=''; return; }
+  const year = document.getElementById('lkYear').value;
+  const term = document.getElementById('lkTerm').value;
+  const cls = classById(st.classId);
+  if(!cls){ out.innerHTML = '<div class="card empty-state">This student is not assigned to a class yet.</div>'; return; }
+  out.innerHTML = '<div class="card empty-state">Loading scores…</div>';
+  const terms = term==='ALL' ? ['First Term','Second Term','Third Term'] : [term];
+  try{
+    const results = [];
+    for(const t of terms){
+      const nested = await lkFetchTerm(cls.id, year, t);
+      results.push({ term:t, r: lkCompute(cls.id, nested, st.id) });
+    }
+    out.innerHTML = lkHeader(st, cls, year) + (term==='ALL' ? lkCompareHtml(results) : lkTermHtml(results[0].r, term, year));
+  }catch(e){
+    out.innerHTML = `<div class="warn-banner"><div>⚠</div><div>${esc(e.message)}</div></div>`;
+  }
+}
+
+function lkHeader(st, cls, year){
+  return `<div class="card" style="margin-bottom:14px;">
+    <div style="font-family:'Lora',serif; font-size:18px; font-weight:700;">${esc(st.name)}</div>
+    <div style="font-size:12.5px; color:var(--muted); margin-top:3px;">${esc(st.admissionNo||'')} · ${esc(cls.name)} · ${esc(year)}${st.status==='Inactive'?' · Inactive':''}</div>
+  </div>`;
+}
+
+function lkTermHtml(r, term, year){
+  if(!r || !r.count) return `<div class="card empty-state"><div class="icon">∅</div>No scores recorded for ${esc(term)}, ${esc(year)}.</div>`;
+  const body = r.subjectRows.map(x=>`<tr>
+    <td>${esc(x.sub.name)}</td>
+    <td>${x.has? x.sba : '—'}</td><td>${x.has? x.exam : '—'}</td>
+    <td><b>${x.has? x.total : '—'}</b></td>
+    <td>${x.has? `<span class="badge ${gradeBadgeClass(x.grade)}">${esc(x.grade)}</span>` : ''}</td>
+    <td>${x.has? esc(x.remark) : ''}</td>
+  </tr>`).join('');
+  const agg = computeAggregate(r.subjectRows.filter(x=>x.has));
+  return `<div class="grid cols-4" style="margin-bottom:14px;">
+      <div class="card stat-card"><div class="label">Total</div><div class="value">${r.total}</div></div>
+      <div class="card stat-card"><div class="label">Average</div><div class="value">${r.avg.toFixed(1)}</div></div>
+      <div class="card stat-card"><div class="label">Position</div><div class="value">${r.rank}<span style="font-size:15px; color:var(--muted);">/${r.rollCount}</span></div></div>
+      <div class="card stat-card"><div class="label">Aggregate</div><div class="value">${agg===''?'—':agg}</div><div class="sub">best 6 subjects</div></div>
+    </div>
+    <div class="card"><div class="section-title">${esc(term)}, ${esc(year)}</div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Subject</th><th>SBA</th><th>Exam</th><th>Total</th><th>Grade</th><th>Remark</th></tr></thead>
+      <tbody>${body}</tbody></table></div></div>`;
+}
+
+function lkCompareHtml(results){
+  const subs = results.find(x=>x.r) ? results.find(x=>x.r).r.subjectRows.map(x=>x.sub) : [];
+  const head = results.map(x=>`<th>${esc(x.term.replace(' Term',''))}</th>`).join('');
+  const cell = (r,i)=>{ const x = r && r.subjectRows[i]; return `<td>${x && x.has ? `<b>${x.total}</b> <span class="badge ${gradeBadgeClass(x.grade)}">${esc(x.grade)}</span>` : '—'}</td>`; };
+  const body = subs.map((sub,i)=>`<tr><td>${esc(sub.name)}</td>${results.map(x=>cell(x.r,i)).join('')}</tr>`).join('');
+  const sum = (f)=>results.map(x=> x.r && x.r.count ? f(x.r) : '—');
+  const row = (label, vals)=>`<tr style="background:#FBF8EF;"><td><b>${label}</b></td>${vals.map(v=>`<td><b>${v}</b></td>`).join('')}</tr>`;
+  if(!results.some(x=>x.r && x.r.count)) return `<div class="card empty-state"><div class="icon">∅</div>No scores recorded for this year yet.</div>`;
+  return `<div class="card"><div class="section-title">All terms <span class="hint">score and grade per subject</span></div>
+    <div class="table-wrap"><table style="min-width:0;">
+      <thead><tr><th>Subject</th>${head}</tr></thead>
+      <tbody>${body}
+        ${row('Total', sum(r=>r.total))}
+        ${row('Average', sum(r=>r.avg.toFixed(1)))}
+        ${row('Position', sum(r=>`${r.rank}/${r.rollCount}`))}
+      </tbody></table></div></div>`;
 }
 
 /* ---------------------------------------------------------------
