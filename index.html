@@ -348,11 +348,12 @@
 
   /* Topbar */
   .topbar{background:var(--sidebar); border-bottom:1px solid var(--line); padding:12px 28px; gap:18px;}
+  .topbar-left{flex-shrink:0;}
   .topbar h1{font-size:18px; white-space:nowrap;}
   .identity .who{white-space:nowrap;}
   body[data-view="dashboard"] .topbar h1{display:none;}
   .search-box{flex:1; max-width:440px; display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--line);
-    border-radius:12px; padding:0 14px; height:42px; color:var(--muted); margin:0 auto;}
+    border-radius:12px; padding:0 14px; height:42px; color:var(--muted); margin:0 auto; min-width:140px;}
   .search-box svg{width:18px; height:18px; flex-shrink:0;}
   .search-box input{flex:1; min-width:0; background:none; border:none; outline:none; color:var(--text); font-family:'Inter',sans-serif; font-size:14px;}
   .search-box:focus-within{border-color:var(--brand);}
@@ -402,7 +403,7 @@
   .empty-state{color:var(--muted);}
 
   /* Report card stays a light, printable sheet */
-  .report-card{--ink:#1B2A4A; --paper:#FFFDF7; --text:#2A2620; --muted:#7A7260; --gold:#B8873A; --gold-light:#E8D5A8; --line:#DDD2B8;
+  .report-card{--ink:#1B2A4A; --paper:#FFFDF7; --text:#2A2620; --muted:#7A7260; --gold:#B8873A; --gold-light:#E8D5A8; --line:#DDD2B8; --green:#2E7D4F; --red:#B33A3A;
     background:#FFFDF7; color:#2A2620; border-radius:3px;}
   .report-card td, .report-card th{border-color:#1B2A4A;}
   .report-card tr:hover td{background:transparent;}
@@ -2162,6 +2163,39 @@ function renderReportClassOptions(){
   sel.innerHTML = `<option value="">Select a class…</option>` + DB.classes.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
   if(cur) sel.value = cur;
 }
+/* Second and Third Term remarks compare each subject with the same subject in the term before it. */
+const TERM_ORDER = ['First Term','Second Term','Third Term'];
+function prevTermSameYear(){
+  const i = TERM_ORDER.indexOf(DB.settings.currentTerm);
+  return i>0 ? { year: DB.settings.currentYear, term: TERM_ORDER[i-1] } : null;
+}
+async function loadPreviousTermScores(classId){
+  const prev = prevTermSameYear();
+  if(!prev) return;
+  try{
+    const data = await api(`/api/scores?year=${encodeURIComponent(prev.year)}&term=${encodeURIComponent(prev.term)}&classId=${classId}`);
+    const nested = {};
+    data.scores.forEach(r=>{
+      const stu = normId(r.studentId), sub = normId(r.subjectId);
+      nested[stu] = nested[stu] || {};
+      nested[stu][sub] = { sba: r.sba ?? '', exam: r.exam ?? '' };
+    });
+    DB.scores[`${prev.year}|${prev.term}|${classId}`] = nested;
+  }catch(e){ /* no earlier scores available — reports fall back to the normal remarks */ }
+}
+function progressVerdict(diff){ return diff>0 ? 'Improved' : diff<0 ? 'Relapsed' : 'Maintained'; }
+// Returns {label, diff, prevTotal, prevTerm} or null when there is nothing to compare with.
+function subjectProgress(classId, studentId, subjectId, curTotal){
+  const prev = prevTermSameYear();
+  if(!prev) return null;
+  const ps = DB.scores[`${prev.year}|${prev.term}|${classId}`];
+  const x = ps && ps[studentId] && ps[studentId][subjectId];
+  if(!x) return null;
+  if(!((x.sba!==undefined && x.sba!=='') || (x.exam!==undefined && x.exam!==''))) return null;
+  const prevTotal = (Number(x.sba)||0) + (Number(x.exam)||0);
+  const diff = curTotal - prevTotal;
+  return { label: progressVerdict(diff), diff, prevTotal, prevTerm: prev.term };
+}
 document.getElementById('reportClassSelect').addEventListener('change', async ()=>{
   const classId = document.getElementById('reportClassSelect').value;
   const listEl = document.getElementById('reportList');
@@ -2170,6 +2204,7 @@ document.getElementById('reportClassSelect').addEventListener('change', async ()
   listEl.innerHTML = `<div class="empty-state">Loading…</div>`;
   try{ await loadScoresForClass(classId); }
   catch(e){ listEl.innerHTML = `<div class="warn-banner">⚠ ${esc(e.message)}</div>`; return; }
+  await loadPreviousTermScores(classId);
   renderReportList();
 });
 document.getElementById('btnGenerateClass').addEventListener('click', ()=>{
@@ -2352,6 +2387,11 @@ function previewReport(classId, studentId){
   const subjectRows = r.subjectRows.map((row, i)=>{
     const sub = DB.subjects.find(s=>s.id===row.subjectId);
     const rankOf = `${row.rank}/${rollCount}`;
+    // Second/Third Term: say whether the pupil improved or relapsed in this subject instead of the usual remark
+    const prog = (row.sba || row.exam) ? subjectProgress(classId, studentId, row.subjectId, row.total) : null;
+    const remarkCell = prog
+      ? `<b style="color:${prog.diff>0?'var(--green)':prog.diff<0?'var(--red)':'inherit'};" title="${prog.prevTotal} in ${esc(prog.prevTerm)}">${prog.label}</b>`
+      : row.remark;
     let gkeyCells;
     if(i < grading.length){
       const g = grading[i];
@@ -2365,7 +2405,7 @@ function previewReport(classId, studentId){
     }
     return `<tr>
       <td class="subj">${esc(sub?sub.name:'')}</td><td>${row.sba||''}</td><td>${row.exam||''}</td>
-      <td><b>${row.total||''}</b></td><td>${row.grade}</td><td style="font-size:8.7px;">${row.remark}</td><td>${rankOf}</td>
+      <td><b>${row.total||''}</b></td><td>${row.grade}</td><td style="font-size:8.7px;">${remarkCell}</td><td>${rankOf}</td>
       ${gkeyCells}
     </tr>`;
   }).join('');
@@ -2559,12 +2599,17 @@ async function lkLoad(){
   out.innerHTML = '<div class="card empty-state">Loading scores…</div>';
   const terms = term==='ALL' ? ['First Term','Second Term','Third Term'] : [term];
   try{
+    let prevR = null;
+    const ti = TERM_ORDER.indexOf(term);
+    if(ti>0){
+      try{ prevR = lkCompute(cls.id, await lkFetchTerm(cls.id, year, TERM_ORDER[ti-1]), st.id); }catch(e){ prevR = null; }
+    }
     const results = [];
     for(const t of terms){
       const nested = await lkFetchTerm(cls.id, year, t);
       results.push({ term:t, r: lkCompute(cls.id, nested, st.id) });
     }
-    out.innerHTML = lkHeader(st, cls, year) + (term==='ALL' ? lkCompareHtml(results) : lkTermHtml(results[0].r, term, year));
+    out.innerHTML = lkHeader(st, cls, year) + (term==='ALL' ? lkCompareHtml(results) : lkTermHtml(results[0].r, term, year, prevR));
   }catch(e){
     out.innerHTML = `<div class="warn-banner"><div>⚠</div><div>${esc(e.message)}</div></div>`;
   }
@@ -2577,14 +2622,20 @@ function lkHeader(st, cls, year){
   </div>`;
 }
 
-function lkTermHtml(r, term, year){
+function lkRemark(x, prevR, term){
+  const p = prevR && prevR.subjectRows.find(y=>y.sub.id===x.sub.id);
+  if(!p || !p.has) return esc(x.remark);
+  const d = x.total - p.total, ti = TERM_ORDER.indexOf(term);
+  return `<b style="color:${d>0?'var(--green)':d<0?'var(--red)':'inherit'};" title="${p.total} in ${TERM_ORDER[ti-1]}">${progressVerdict(d)}</b>`;
+}
+function lkTermHtml(r, term, year, prevR){
   if(!r || !r.count) return `<div class="card empty-state"><div class="icon">∅</div>No scores recorded for ${esc(term)}, ${esc(year)}.</div>`;
   const body = r.subjectRows.map(x=>`<tr>
     <td>${esc(x.sub.name)}</td>
     <td>${x.has? x.sba : '—'}</td><td>${x.has? x.exam : '—'}</td>
     <td><b>${x.has? x.total : '—'}</b></td>
     <td>${x.has? `<span class="badge ${gradeBadgeClass(x.grade)}">${esc(x.grade)}</span>` : ''}</td>
-    <td>${x.has? esc(x.remark) : ''}</td>
+    <td>${x.has? lkRemark(x, prevR, term) : ''}</td>
   </tr>`).join('');
   const agg = computeAggregate(r.subjectRows.filter(x=>x.has));
   return `<div class="grid cols-4" style="margin-bottom:14px;">
