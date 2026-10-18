@@ -513,6 +513,26 @@
   .fee-hint{font-size:11.5px; color:var(--muted); margin-top:5px; text-transform:none; letter-spacing:0; font-weight:400;}
   @media(max-width:820px){ .fee-grid{grid-template-columns:1fr;} }
 
+  .rc-page{break-after:page; page-break-after:always;}
+  .rc-page:last-child{break-after:auto; page-break-after:auto;}
+  .sheet{background:#fff; color:#111; padding:18px 20px; border-radius:3px; margin-bottom:14px; font-size:12px;}
+  .sheet h2{font-family:'Lora',serif; font-size:17px; margin:0 0 2px 0; color:#1B2A4A;}
+  .sheet .sub{color:#555; margin-bottom:10px; font-size:12px;}
+  .sheet table{width:100%; border-collapse:collapse; min-width:0; background:#fff;}
+  .sheet th, .sheet td{border:1px solid #888; padding:4px 6px; text-align:left; color:#111; background:#fff; font-size:11.5px;}
+  .sheet th{background:#EEF1F7; font-weight:700;}
+  .sheet td.num, .sheet th.num{text-align:center;}
+  .sheet tr:hover td{background:#fff;}
+  .sheet-land{page:land;}
+  @page land{size:A4 landscape; margin:10mm;}
+  .tb-wrap{display:flex; gap:8px; flex-wrap:wrap;}
+  .chk-row{display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); font-size:13px;}
+  .chk-row:last-child{border-bottom:0;}
+  .chk-ico{width:20px; height:20px; border-radius:50%; flex:0 0 20px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;}
+  .chk-ok .chk-ico{background:rgba(20,184,135,.2); color:#14B887;}
+  .chk-no .chk-ico{background:rgba(240,97,127,.2); color:#F0617F;}
+  .chk-row a{color:var(--gold); cursor:pointer; margin-left:auto; white-space:nowrap; font-size:12px;}
+  .sent-tag{color:#14B887; font-size:11.5px; font-weight:600;}
   /* Printing: only the report card(s), on white */
   @media print{
     body{background:#fff !important;}
@@ -521,6 +541,7 @@
     .content{padding:0 !important; overflow:visible !important;}
     #view-reports > *:not(#reportPreview){display:none !important;}
     .report-card{border-radius:0;}
+    .sheet{padding:0; margin:0;}
   }
 </style>
 </head>
@@ -663,6 +684,7 @@
             <button class="rk-tab" data-tab="students" onclick="rkTab('students')">Best students</button>
             <button class="rk-tab" data-tab="subjects" onclick="rkTab('subjects')">By subject</button>
             <button class="rk-tab" data-tab="classes" onclick="rkTab('classes')">Best class</button>
+            <button class="rk-tab" data-tab="support" onclick="rkTab('support')">Needs support</button>
           </div>
         </div>
         <div id="rkBody" style="margin-top:16px;"></div>
@@ -679,6 +701,7 @@
             <div><b id="dashDate"></b><span id="dashTermLine"></span></div></div>
         </div>
         <div id="dashWarn"></div>
+        <div class="card dcard" id="dashChecklistCard" style="margin-bottom:16px;"><div class="dc-title">Term-end checklist<span class="dc-hint" id="dashChkHint"></span></div><div id="dashChecklist"></div></div>
 
         <div class="hero-cards">
           <div class="hero-card hc-blue"><div class="chip" data-ico="students"></div><div class="lbl">Total Students</div><div class="num" id="statStudents">0</div><div class="note">Active enrolment</div><div class="bg-ico" data-ico="students"></div></div>
@@ -724,6 +747,8 @@
           <input class="search-input" id="studentSearch" placeholder="Search student…">
           <div style="display:flex; gap:8px;">
             <select class="pill-select" id="studentClassFilter"><option value="">All classes</option></select>
+            <select class="pill-select" id="studentStatusFilter"><option value="">All students</option><option value="Active">Active only</option><option value="Inactive">Alumni &amp; inactive</option></select>
+            <button class="btn btn-outline" onclick="openPromoteModal()">Promote Students</button>
             <button class="btn btn-outline" onclick="exportStudentsCSV()">Export CSV</button>
             <button class="btn btn-primary" id="btnAddStudent">+ Add Student</button>
           </div>
@@ -795,7 +820,11 @@
       <div class="view" id="view-reports">
         <div class="toolbar">
           <select class="pill-select" id="reportClassSelect"><option value="">Select a class…</option></select>
-          <div style="display:flex; gap:8px;">
+          <div class="tb-wrap">
+            <button class="btn btn-outline" onclick="reportsNeedClass(suggestForClass)">Suggest Remarks</button>
+            <button class="btn btn-outline" onclick="reportsNeedClass(printClassList)">Class List</button>
+            <button class="btn btn-outline" onclick="reportsNeedClass(printBroadsheet)">Broadsheet</button>
+            <button class="btn btn-outline" onclick="reportsNeedClass(openNotifyModal)">Message Parents</button>
             <button class="btn btn-outline" id="btnExportResults">Export Results CSV</button>
             <button class="btn btn-gold" id="btnGenerateClass">Generate All Reports for Class</button>
           </div>
@@ -832,6 +861,13 @@
           <div class="section-title">Term details <span class="hint" id="termInfoHint">for current term — used on printed reports</span></div>
           <div class="form-grid cols-3" id="termInfoForm"></div>
           <div style="margin-top:14px;"><button class="btn btn-primary" id="btnSaveTermInfo">Save Term Details</button></div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="section-title">Backup <span class="hint">keep a safe copy of everything</span></div>
+          <p style="font-size:12.2px; color:var(--muted); margin-top:-4px;">Downloads one file with your school settings, classes, subjects, teachers, students, term details and every score for every year and term. Keep it somewhere safe (email it to yourself or save it on a flash drive). Restoring a backup has to be done by whoever looks after your server.</p>
+          <label style="font-size:12.5px; display:flex; gap:8px; align-items:center; margin:8px 0;"><input type="checkbox" id="bkRemarks" checked> Also include this term's report details (attendance, remarks, arrears)</label>
+          <button class="btn btn-primary" id="btnBackup" onclick="downloadBackup()">Download Backup</button>
+          <span id="bkStatus" style="font-size:12px; color:var(--muted); margin-left:10px;"></span>
         </div>
         <div class="card" style="margin-top:16px;">
           <div class="section-title">User accounts <span class="hint">manage who can sign in</span></div>
@@ -1530,6 +1566,7 @@ function renderDashboard(){
   document.getElementById('dashDist').innerHTML = dashDonut(active);
   dashActivityCard(progress);
   document.getElementById('dashTerm').innerHTML = dashTermCard();
+  renderChecklist();
   document.getElementById('dashSubjects').innerHTML = dashSubjectBars();
   const motto = (DB.settings.motto||'').trim();
   document.getElementById('dashMotto').innerHTML = motto
@@ -1710,6 +1747,9 @@ function renderStudents(){
   const filterClass = document.getElementById('studentClassFilter').value;
   let list = DB.students.filter(s=>{
     if(filterClass && s.classId!==filterClass) return false;
+    const sf = document.getElementById('studentStatusFilter').value;
+    if(sf==='Active' && s.status==='Inactive') return false;
+    if(sf==='Inactive' && s.status!=='Inactive') return false;
     if(search && !s.name.toLowerCase().includes(search) && !(s.admissionNo||'').toLowerCase().includes(search)) return false;
     return true;
   });
@@ -1736,6 +1776,7 @@ function renderStudents(){
 }
 document.getElementById('studentSearch').addEventListener('input', renderStudents);
 document.getElementById('studentClassFilter').addEventListener('change', renderStudents);
+document.getElementById('studentStatusFilter').addEventListener('change', renderStudents);
 document.getElementById('btnAddStudent').addEventListener('click', ()=>openStudentModal());
 
 function openStudentModal(id){
@@ -2316,7 +2357,7 @@ function renderReportList(){
   listEl.innerHTML = `${warnHtml}<div class="table-wrap"><table>
     <thead><tr><th>Student</th><th>Total</th><th>Average</th><th>Position</th><th>Arrears</th><th>Total bill</th><th></th></tr></thead>
     <tbody>${results.map(r=>{
-      const phone = (r.student.guardianPhone||'').replace(/[^\d]/g,'');
+      const phone = normalizePhone(r.student.guardianPhone);
       const posStr = r.count? `${r.rank}/${rollCount}` : '—';
       const msg = encodeURIComponent(`${DB.settings.schoolName}: ${r.student.name}'s ${DB.settings.currentTerm} report (${DB.settings.currentYear}) — Total: ${r.total}, Average: ${r.count?r.avg.toFixed(1)+'%':'—'}, Position: ${posStr} in class.`);
       const waLink = phone? `<a class="btn btn-outline btn-sm" href="https://wa.me/${phone}?text=${msg}" target="_blank" rel="noopener">Notify Parent</a>` : `<span style="color:var(--muted); font-size:11px;">No phone</span>`;
@@ -2359,6 +2400,10 @@ async function openRemarkModal(studentId, classId){
       <div class="field"><label>Conduct</label><input id="rm_conduct" value="${esc(r.conduct)}"></div>
       <div class="field"><label>Attitude</label><input id="rm_attitude" value="${esc(r.attitude)}"></div>
       <div class="field"><label>Interest</label><input id="rm_interest" value="${esc(r.interest)}"></div>
+    </div>
+    <div style="margin-top:14px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" type="button" onclick="fillSuggestedRemarks('${studentId}','${classId}')">✨ Suggest remarks</button>
+      <span style="font-size:11.5px; color:var(--muted);">Based on this term's average and how it compares with last term. Edit before saving.</span>
     </div>
     <div class="form-grid" style="margin-top:12px;">
       <div class="field"><label>Class Teacher's Remarks</label><textarea id="rm_ctRemarks">${esc(r.classTeacherRemarks)}</textarea></div>
@@ -2579,21 +2624,365 @@ function previewReport(classId, studentId){
     </div>
   `;
 }
-function renderAllReportsForClass(classId){
+function renderAllReportsForClass(classId, withSummary){
+  if(withSummary===undefined) withSummary = (lsGet('rcSummary')==='1');
   const results = computeClassResults(classId);
-  let combined = results.map(r=>buildReportHTML(classId, r.student.id)).join('<div style="page-break-after:always;"></div>');
+  const pages = results.map(r=>`<div class="rc-page">${buildReportHTML(classId, r.student.id)}</div>`);
+  if(withSummary) pages.unshift(`<div class="rc-page">${classSummaryHTML(classId)}</div>`);
   document.getElementById('reportPreview').innerHTML = `
     <div class="rc-actions">
       <button class="btn btn-gold btn-sm" onclick="window.print()">Print / Save all as PDF</button>
+      <label style="font-size:12.5px; margin:0 10px; display:inline-flex; gap:6px; align-items:center;"><input type="checkbox" ${withSummary?'checked':''} onchange="lsSet('rcSummary',this.checked?'1':'0'); renderAllReportsForClass('${classId}', this.checked)"> Add class summary page first</label>
       <button class="btn btn-outline btn-sm" onclick="document.getElementById('reportPreview').innerHTML=''">Close Preview</button>
     </div>
-    ${combined}
+    ${pages.join('')}
   `;
 }
 function buildReportHTML(classId, studentId){
   previewReport(classId, studentId);
   const html = document.getElementById('reportPreview').querySelector('.report-card').outerHTML;
   return html;
+}
+
+
+/* ---------------------------------------------------------------
+   PHONE NUMBERS (Ghana): 024 123 4567 -> 233241234567 for WhatsApp / SMS links
+--------------------------------------------------------------- */
+function normalizePhone(p){
+  let d = (p||'').toString().replace(/[^\d]/g,'');
+  if(!d) return '';
+  if(d.startsWith('00')) d = d.slice(2);
+  if(d.startsWith('233')) return d;
+  if(d.startsWith('0')) return '233'+d.slice(1);
+  if(d.length===9) return '233'+d;
+  return d;
+}
+function reportsNeedClass(fn){
+  const classId = document.getElementById('reportClassSelect').value;
+  if(!classId){ customAlert('Select a class first.'); return; }
+  fn(classId);
+}
+
+/* ---------------------------------------------------------------
+   REMARK SUGGESTIONS
+--------------------------------------------------------------- */
+function pickBy(arr, seed){ let h=0; String(seed).split('').forEach(c=>{ h = (h*31 + c.charCodeAt(0))>>>0; }); return arr[h % arr.length]; }
+function suggestRemarks(classId, studentId){
+  const r = computeClassResults(classId).find(x=>x.student.id===studentId);
+  if(!r || !r.count) return null;
+  const st = r.student, avg = r.avg;
+  const male = /^m/i.test(st.gender||''), female = /^f/i.test(st.gender||'');
+  const he = male?'He':female?'She':'The pupil', his = male?'his':female?'her':'the';
+  const prev = studentPreviousAverage(classId, studentId);
+  const diff = prev ? avg - prev.avg : null;
+  const rows = r.subjectRows.filter(x=>(x.sba||x.exam));
+  const subName = id => (DB.subjects.find(x=>x.id===id)||{}).name || '';
+  const weak = rows.filter(x=>x.total<50).sort((a,b)=>a.total-b.total).map(x=>subName(x.subjectId)).filter(Boolean);
+  const best = rows.slice().sort((a,b)=>b.total-a.total)[0];
+  const bestName = best ? subName(best.subjectId) : '';
+  let ct, hm;
+  if(avg>=80){ ct = pickBy([`An outstanding performance. ${he} should keep it up.`,`Excellent results across the board. ${he} is a pleasure to teach.`], studentId);
+               hm = pickBy(['Excellent work. Keep the flag flying.','Outstanding. Keep it up.'], studentId); }
+  else if(avg>=70){ ct = pickBy([`A very good performance. ${he} can aim even higher.`,`Very good work this term. ${he} should keep working hard.`], studentId);
+               hm = pickBy(['Very good. Keep it up.','A commendable result. Keep working hard.'], studentId); }
+  else if(avg>=60){ ct = pickBy([`A good performance. With more effort ${he.toLowerCase()==='the pupil'?'the pupil':he.toLowerCase()} can do better.`,`Good work. ${he} should put in more effort to reach the top.`], studentId);
+               hm = pickBy(['Good. There is room for improvement.','Fair progress. Aim higher next term.'], studentId); }
+  else if(avg>=50){ ct = pickBy([`An average performance. ${he} needs to be more serious with ${his} studies.`,`${he} can do better and should spend more time on ${his} books.`], studentId);
+               hm = pickBy(['Average. You can do better.','More effort is needed next term.'], studentId); }
+  else if(avg>=40){ ct = pickBy([`A weak performance. ${he} needs extra attention and regular practice at home.`,`${he} must work much harder next term.`], studentId);
+               hm = pickBy(['Below average. Work harder and seek help.','Weak. Serious improvement is needed.'], studentId); }
+  else { ct = `Performance is poor. ${he} needs close supervision and extra lessons.`;
+         hm = 'Poor. Parents are advised to follow up closely.'; }
+  const extra = [];
+  if(diff!==null){
+    if(diff>=5) extra.push(`${he} has improved clearly since ${prev.term} (up ${diff.toFixed(1)} points). Well done.`);
+    else if(diff<=-5) extra.push(`${he} has dropped since ${prev.term} (down ${Math.abs(diff).toFixed(1)} points) and must pick up again.`);
+  }
+  if(bestName && avg>=50) extra.push(`${he} did best in ${bestName}.`);
+  if(weak.length) extra.push(`Needs to work harder in ${weak.slice(0,3).join(', ')}.`);
+  return { ct: [ct, ...extra].join(' '), hm };
+}
+function fillSuggestedRemarks(studentId, classId){
+  const sg = suggestRemarks(classId, studentId);
+  if(!sg){ customAlert('There are no scores for this pupil yet, so there is nothing to base a remark on.'); return; }
+  document.getElementById('rm_ctRemarks').value = sg.ct;
+  document.getElementById('rm_hmRemarks').value = sg.hm;
+}
+function suggestForClass(classId){
+  const targets = studentsInClass(classId).filter(st=>{
+    const rm = getRemark(st.id);
+    return (!rm.classTeacherRemarks || !rm.headmasterRemarks) && suggestRemarks(classId, st.id);
+  });
+  if(!targets.length){ customAlert('Every pupil with scores already has both remarks filled in.'); return; }
+  customConfirm(`Fill in suggested remarks for ${targets.length} pupil(s) who have empty remarks?\n\nRemarks that are already written are not touched, and you can still change any of them with Edit Details.`, async ()=>{
+    let done=0, failed=0;
+    for(let i=0;i<targets.length;i+=5){
+      await Promise.all(targets.slice(i,i+5).map(async st=>{
+        const sg = suggestRemarks(classId, st.id);
+        const cur = getRemark(st.id);
+        const rm = { ...cur, pd:{...cur.pd} };
+        if(!rm.classTeacherRemarks) rm.classTeacherRemarks = sg.ct;
+        if(!rm.headmasterRemarks) rm.headmasterRemarks = sg.hm;
+        try{
+          await api(`/api/remarks/${st.id}`, { method:'PUT', body: JSON.stringify({ year:DB.settings.currentYear, term:DB.settings.currentTerm, ...rm }) });
+          DB.remarks[remarkKey(st.id)] = rm; done++;
+        }catch(e){ failed++; }
+      }));
+    }
+    renderReportList();
+    customAlert(`Suggested remarks saved for ${done} pupil(s)${failed?` (${failed} failed — try again)`:''}. Open Edit Details on any pupil to adjust the wording.`);
+  });
+}
+
+/* ---------------------------------------------------------------
+   CLASS SUMMARY, CLASS LIST, BROADSHEET
+--------------------------------------------------------------- */
+function sheetHeader(title, classId, extra){
+  const cls = classById(classId), t = teacherById(cls.teacherId);
+  return `<h2>${esc(DB.settings.schoolName||'School')}</h2>
+    <div class="sub"><b>${esc(title)}</b> — ${esc(cls.name)} · ${esc(DB.settings.currentTerm)}, ${esc(DB.settings.currentYear)}${t?` · Class teacher: ${esc(t.name)}`:''}${extra?' · '+extra:''}</div>`;
+}
+function classSummaryHTML(classId){
+  const results = computeClassResults(classId);
+  const scored = results.filter(r=>r.count>0);
+  const avg = scored.length ? scored.reduce((a,r)=>a+r.avg,0)/scored.length : 0;
+  const sorted = [...results].sort((a,b)=>a.rank-b.rank);
+  return `<div class="sheet">${sheetHeader('Class summary', classId, `On roll: ${results.length} · Class average: ${scored.length?avg.toFixed(1)+'%':'—'}`)}
+    <table><thead><tr><th class="num">Pos.</th><th>Name</th><th class="num">Total</th><th class="num">Average</th></tr></thead><tbody>
+    ${sorted.map(r=>`<tr><td class="num">${r.count?r.rank:'—'}</td><td>${esc(r.student.name)}</td><td class="num">${r.count?r.total:'—'}</td><td class="num">${r.count?r.avg.toFixed(1)+'%':'—'}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+function showSheet(html){
+  const el = document.getElementById('reportPreview');
+  el.innerHTML = `<div class="rc-actions">
+      <button class="btn btn-gold btn-sm" onclick="window.print()">Print / Save as PDF</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('reportPreview').innerHTML=''">Close Preview</button>
+    </div>${html}`;
+  el.scrollIntoView({behavior:'smooth', block:'start'});
+}
+function printClassList(classId){
+  const list = studentsInClass(classId).slice().sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  showSheet(`<div class="sheet">${sheetHeader('Class list', classId, `On roll: ${list.length}`)}
+    <table><thead><tr><th class="num">No.</th><th>Adm. No</th><th>Name</th><th class="num">Sex</th><th>Guardian</th><th>Phone</th><th style="width:70px;">Remarks</th></tr></thead><tbody>
+    ${list.map((st,i)=>`<tr><td class="num">${i+1}</td><td>${esc(st.admissionNo||'')}</td><td>${esc(st.name)}</td><td class="num">${esc((st.gender||'').charAt(0))}</td><td>${esc(st.guardianName||'')}</td><td>${esc(st.guardianPhone||'')}</td><td></td></tr>`).join('')}
+    </tbody></table></div>`);
+}
+function printBroadsheet(classId){
+  const subs = subjectsForClass(classId);
+  const results = computeClassResults(classId).sort((a,b)=>a.rank-b.rank);
+  const classAvg = sid => { const v = results.map(r=>r.subjectRows.find(x=>x.subjectId===sid)).filter(x=>x && (x.sba||x.exam)).map(x=>x.total); return v.length ? (v.reduce((a,b)=>a+b,0)/v.length).toFixed(1) : '—'; };
+  showSheet(`<div class="sheet sheet-land">${sheetHeader('Broadsheet', classId, `On roll: ${results.length}`)}
+    <table><thead><tr><th class="num">Pos.</th><th>Name</th>${subs.map(sb=>`<th class="num">${esc(sb.name)}</th>`).join('')}<th class="num">Total</th><th class="num">Avg.</th></tr></thead><tbody>
+    ${results.map(r=>`<tr><td class="num">${r.count?r.rank:'—'}</td><td>${esc(r.student.name)}</td>${subs.map(sb=>{ const x=r.subjectRows.find(y=>y.subjectId===sb.id); return `<td class="num">${x && (x.sba||x.exam)? x.total : '—'}</td>`; }).join('')}<td class="num"><b>${r.count?r.total:'—'}</b></td><td class="num"><b>${r.count?r.avg.toFixed(1):'—'}</b></td></tr>`).join('')}
+    <tr><td></td><td><b>Class average</b></td>${subs.map(sb=>`<td class="num"><b>${classAvg(sb.id)}</b></td>`).join('')}<td></td><td></td></tr>
+    </tbody></table></div>`);
+}
+
+/* ---------------------------------------------------------------
+   MESSAGE PARENTS (WhatsApp / SMS, one tap per parent)
+--------------------------------------------------------------- */
+const DEFAULT_PARENT_MSG = "Dear Parent/Guardian of {name}, {school}: {term} {year} results — Total {total}, Average {average}, Position {position}. {bill}Thank you.";
+function sentKey(studentId){ return `sent|${ctxKey()}|${studentId}`; }
+function parentMessage(tpl, classId, r){
+  const rollCount = studentsInClass(classId).length;
+  const b = billFor(classId, r.student.id);
+  const vals = { name:r.student.name, school:DB.settings.schoolName||'', term:DB.settings.currentTerm, year:DB.settings.currentYear,
+    total: r.count? r.total : '—', average: r.count? r.avg.toFixed(1)+'%' : '—', position: r.count? `${r.rank}/${rollCount}` : '—',
+    bill: b.total ? `Fees for next term: ${b.total}. ` : '' };
+  return tpl.replace(/\{(\w+)\}/g, (m,k)=> k in vals ? vals[k] : m).replace(/\s+/g,' ').trim();
+}
+function openNotifyModal(classId){
+  const tpl = lsGet('parentMsgTpl') || DEFAULT_PARENT_MSG;
+  openModal(`
+    <h3>Message parents — ${esc(classById(classId).name)}</h3>
+    <div style="font-size:11.5px; color:var(--muted); margin-bottom:10px;">Edit the message below. You can use {name} {school} {term} {year} {total} {average} {position} {bill}. Then tap WhatsApp or SMS beside each pupil — the message opens ready to send; you just press send. Phone numbers like 024… are converted for you.</div>
+    <div class="field"><label>Message</label><textarea id="parentTpl" rows="4" oninput="lsSet('parentMsgTpl', this.value); refreshNotifyList('${classId}')">${esc(tpl)}</textarea></div>
+    <div style="margin:8px 0;"><button class="btn btn-outline btn-sm" onclick="document.getElementById('parentTpl').value=DEFAULT_PARENT_MSG; lsSet('parentMsgTpl', DEFAULT_PARENT_MSG); refreshNotifyList('${classId}')">Reset message</button></div>
+    <div class="table-wrap" style="max-height:48vh; overflow:auto;"><table style="min-width:0;"><thead><tr><th>Pupil</th><th>Phone</th><th></th></tr></thead><tbody id="notifyRows"></tbody></table></div>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="closeModal()">Done</button></div>`);
+  refreshNotifyList(classId);
+}
+function refreshNotifyList(classId){
+  const tpl = document.getElementById('parentTpl').value;
+  const results = computeClassResults(classId);
+  document.getElementById('notifyRows').innerHTML = results.map(r=>{
+    const ph = normalizePhone(r.student.guardianPhone);
+    const msg = encodeURIComponent(parentMessage(tpl, classId, r));
+    const sent = lsGet(sentKey(r.student.id))==='1';
+    return `<tr><td>${esc(r.student.name)}${r.count?'':' <span style="color:var(--muted); font-size:11px;">(no scores)</span>'}</td>
+      <td style="font-size:12px;">${ph?esc(r.student.guardianPhone):'<span style="color:var(--muted)">No phone</span>'}</td>
+      <td style="white-space:nowrap;">${ph? `<a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="https://wa.me/${ph}?text=${msg}" onclick="markSent('${r.student.id}')">WhatsApp</a>
+        <a class="btn btn-outline btn-sm" href="sms:+${ph}?body=${msg}" onclick="markSent('${r.student.id}')">SMS</a>` : ''}
+        <span class="sent-tag" id="sent_${r.student.id}">${sent?'Sent ✓':''}</span></td></tr>`;
+  }).join('');
+}
+function markSent(studentId){
+  lsSet(sentKey(studentId), '1');
+  const el = document.getElementById('sent_'+studentId); if(el) el.textContent = 'Sent ✓';
+}
+
+/* ---------------------------------------------------------------
+   NEEDS SUPPORT (Top Performers tab)
+--------------------------------------------------------------- */
+const PASS_MARK = 50, DROP_FLAG = 5;
+let rkSupportToken = 0;
+function rkPrevTermOf(year, term){
+  const i = TERM_ORDER.indexOf(term);
+  if(i>0) return { year, term: TERM_ORDER[i-1] };
+  const ys = DB.settings.years||[], yi = ys.indexOf(year);
+  return yi>0 ? { year: ys[yi-1], term: 'Third Term' } : null;
+}
+async function rkSupport(scoped, fails){
+  const token = ++rkSupportToken;
+  const { year, term } = RK.data;
+  const prev = rkPrevTermOf(year, term);
+  const prevAvg = {};
+  if(prev){
+    await Promise.all(scoped.map(async c=>{
+      try{ const n = await lkFetchTerm(c.cls.id, prev.year, prev.term); rkRows(c.cls.id, n).forEach(r=>{ if(r.count) prevAvg[r.st.id] = r.avg; }); }catch(e){}
+    }));
+  }
+  if(token!==rkSupportToken || RK.tab!=='support') return;
+  const out = [];
+  scoped.forEach(c=>c.rows.forEach(r=>{
+    if(!r.count) return;
+    const reasons = [];
+    if(r.avg < PASS_MARK) reasons.push(`Average below ${PASS_MARK}`);
+    const low = r.subjectRows.filter(x=>x.has && x.total<PASS_MARK);
+    if(low.length>=3) reasons.push(`Below ${PASS_MARK} in ${low.length} subjects (${low.map(x=>esc(x.sub.name)).join(', ')})`);
+    const p = prevAvg[r.st.id];
+    const diff = p!==undefined ? r.avg - p : null;
+    if(diff!==null && diff <= -DROP_FLAG) reasons.push(`Dropped ${Math.abs(diff).toFixed(1)} points since ${prev.term}`);
+    if(reasons.length) out.push({ r, cls:c.cls, reasons, diff });
+  }));
+  out.sort((a,b)=> b.reasons.length-a.reasons.length || a.r.avg-b.r.avg);
+  const body = document.getElementById('rkBody');
+  if(!out.length){ body.innerHTML = fails + `<div class="card empty-state"><div class="icon">✓</div>No pupil needs flagging for ${esc(term)}, ${esc(year)}.</div>`; return; }
+  const rows = out.map(o=>`<tr><td><b>${esc(o.r.st.name)}</b></td><td>${esc(o.cls.name)}</td><td>${o.r.avg.toFixed(1)}</td>
+    <td>${o.diff===null?'—':(o.diff>0?'+':'')+o.diff.toFixed(1)}</td><td style="font-size:12px;">${o.reasons.join('<br>')}</td></tr>`).join('');
+  body.innerHTML = fails + `<div class="card"><div class="section-title">${out.length} pupil(s) who may need extra support <span class="hint">${esc(term)}, ${esc(year)}</span></div>
+    <div class="table-wrap"><table style="min-width:0;"><thead><tr><th>Pupil</th><th>Class</th><th>Average</th><th>Change</th><th>Why</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="kbd-hint">Flagged when the average is below ${PASS_MARK}, three or more subjects are below ${PASS_MARK}, or the average fell by ${DROP_FLAG} points or more since the previous term.</div></div>`;
+}
+
+/* ---------------------------------------------------------------
+   DASHBOARD: TERM-END CHECKLIST
+--------------------------------------------------------------- */
+function renderChecklist(){
+  const el = document.getElementById('dashChecklist'); if(!el) return;
+  const items = [];
+  const add = (ok, text, view)=>items.push({ok, text, view});
+  // scores
+  const incomplete = [];
+  DB.classes.forEach(c=>{
+    const n = subjectsForClass(c.id).length, res = computeClassResults(c.id);
+    if(!n || !res.length) return;
+    const missing = res.filter(r=>r.count<n).length;
+    if(missing) incomplete.push(`${c.name} (${missing})`);
+  });
+  add(!incomplete.length, incomplete.length ? `Scores missing for: ${esc(incomplete.join(', '))}` : 'All scores entered for every class', 'scores');
+  const noTeacher = DB.classes.filter(c=>!c.teacherId);
+  add(!noTeacher.length, noTeacher.length ? `No class teacher for: ${esc(noTeacher.map(c=>c.name).join(', '))}` : 'Every class has a class teacher', 'classes');
+  add(!!DB.settings.headmaster, DB.settings.headmaster ? "Headmaster's name is set" : "Headmaster's name is missing", 'settings');
+  const ti = getTermInfo();
+  const miss = [['totalSchoolDays','school days'],['dateOfIssue','date of issue'],['nextTermBegins','next term start date'],['headmasterContact',"headmaster's contact"]].filter(([k])=>!(ti[k]||'').toString().trim()).map(x=>x[1]);
+  add(!miss.length, miss.length ? `Term details missing: ${miss.join(', ')}` : 'Term details are filled in', 'settings');
+  const fees = parseFees(ti.nextTermTuitionFee);
+  const levelsPresent = [...new Set(DB.classes.map(c=>feeGroupOfLevel(levelOfClass(c.name))).filter(Boolean))];
+  const noFee = FEE_GROUPS.filter(g=>levelsPresent.includes(g.key) && !(fees[g.key]||'').trim()).map(g=>g.label);
+  add(!noFee.length, noFee.length ? `Next term's fee not set for: ${noFee.join(', ')}` : "Next term's fees are set for every level", 'settings');
+  const done = items.filter(i=>i.ok).length;
+  document.getElementById('dashChkHint').textContent = `${done} of ${items.length} done`;
+  el.innerHTML = items.map(i=>`<div class="chk-row ${i.ok?'chk-ok':'chk-no'}"><span class="chk-ico">${i.ok?'✓':'!'}</span><span>${i.text}</span>${i.ok?'':`<a onclick="goto('${i.view}')">Fix →</a>`}</div>`).join('');
+}
+
+/* ---------------------------------------------------------------
+   BACKUP (download everything)
+--------------------------------------------------------------- */
+async function downloadBackup(){
+  const btn = document.getElementById('btnBackup'), st = document.getElementById('bkStatus');
+  btn.disabled = true;
+  const backup = { app:'school-records', exportedAt:new Date().toISOString(), school:DB.settings.schoolName };
+  try{
+    st.textContent = 'Collecting school data…';
+    const [settings, years, grading, teachers, classes, subjects, students] = await Promise.all(
+      ['/api/settings','/api/settings/years','/api/settings/grading','/api/teachers','/api/classes','/api/subjects','/api/students'].map(p=>api(p)));
+    Object.assign(backup, { settings, years, grading, teachers, classes, subjects, students, termInfo:{}, scores:{}, remarks:{} });
+    const yrs = years && years.length ? years : [DB.settings.currentYear];
+    const jobs = [];
+    yrs.forEach(y=>TERM_ORDER.forEach(t=>{
+      jobs.push(async ()=>{ try{ backup.termInfo[`${y}|${t}`] = await api(`/api/settings/term-info?year=${encodeURIComponent(y)}&term=${encodeURIComponent(t)}`); }catch(e){} });
+      classes.forEach(c=>jobs.push(async ()=>{
+        try{ const d = await api(`/api/scores?year=${encodeURIComponent(y)}&term=${encodeURIComponent(t)}&classId=${c.id}`);
+             if(d.scores && d.scores.length) backup.scores[`${y}|${t}|${c.id}`] = d.scores; }catch(e){}
+      }));
+    }));
+    if(document.getElementById('bkRemarks').checked){
+      const y = DB.settings.currentYear, t = DB.settings.currentTerm;
+      students.forEach(stu=>jobs.push(async ()=>{
+        try{ const d = await api(`/api/remarks/${stu.id}?year=${encodeURIComponent(y)}&term=${encodeURIComponent(t)}`);
+             if(d && Object.keys(d).length) backup.remarks[`${y}|${t}|${stu.id}`] = d; }catch(e){}
+      }));
+    }
+    let done = 0; const total = jobs.length, queue = jobs.slice();
+    await Promise.all(Array.from({length:4}, async ()=>{
+      while(queue.length){ const j = queue.shift(); await j(); done++; if(done%10===0||done===total) st.textContent = `Collecting scores… ${Math.round(done/total*100)}%`; }
+    }));
+    const blob = new Blob([JSON.stringify(backup)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `school-backup-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+    st.textContent = `Backup downloaded (${students.length} students, ${Object.keys(backup.scores).length} score sheets).`;
+  }catch(e){ st.textContent = ''; customAlert('Backup failed: '+e.message); }
+  btn.disabled = false;
+}
+
+/* ---------------------------------------------------------------
+   PROMOTE STUDENTS TO THE NEXT CLASS
+--------------------------------------------------------------- */
+function guessNextClass(i){
+  const c = DB.classes[i], n = (c.name||'').toLowerCase();
+  if(/(jhs|j\.h\.s|junior high)\s*3|basic\s*9|primary\s*9|\bform\s*3/.test(n) || i===DB.classes.length-1) return 'LEAVE';
+  return DB.classes[i+1].id;
+}
+function openPromoteModal(){
+  if(!DB.classes.length){ customAlert('Add classes first.'); return; }
+  const rows = DB.classes.map((c,i)=>{
+    const g = guessNextClass(i), n = studentsInClass(c.id).length;
+    return `<tr><td>${esc(c.name)}</td><td>${n}</td><td><select class="pill-select" id="promo_${c.id}">
+      ${DB.classes.map(x=>`<option value="${x.id}" ${g===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}
+      <option value="STAY">Stay in same class</option>
+      <option value="LEAVE" ${g==='LEAVE'?'selected':''}>Leaves school (alumni)</option></select></td></tr>`;
+  }).join('');
+  openModal(`<h3>Promote students</h3>
+    <div class="warn-banner" style="margin-bottom:10px;"><div>⚠</div><div>Do this only after all reports for the year are printed and backed up. Old scores stay filed under the old class, so Student Lookup for earlier years may look empty for promoted pupils. Use the Backup button in Settings first.</div></div>
+    <div style="font-size:12px; color:var(--muted); margin-bottom:8px;">Check where each class goes. Active pupils in each class are moved together; pupils who leave are marked Inactive and appear under "Alumni &amp; inactive" in the Students list.</div>
+    <div class="table-wrap" style="max-height:46vh; overflow:auto;"><table style="min-width:0;"><thead><tr><th>Class</th><th>Pupils</th><th>Moves to</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="runPromotion()">Promote</button></div>`);
+}
+async function runPromotion(){
+  const plan = DB.classes.map(c=>({ cls:c, to:document.getElementById('promo_'+c.id).value, pupils:studentsInClass(c.id) })).filter(p=>p.pupils.length && p.to!=='STAY');
+  const moving = plan.reduce((a,p)=>a+p.pupils.length,0);
+  if(!moving){ closeModal(); customAlert('Nothing to move.'); return; }
+  const leaving = plan.filter(p=>p.to==='LEAVE').reduce((a,p)=>a+p.pupils.length,0);
+  closeModal();
+  customConfirm(`Move ${moving} pupil(s) to their next class${leaving?`, of whom ${leaving} leave the school`:''}?\n\nThis updates every pupil's record.`, async ()=>{
+    const jobs = [];
+    plan.forEach(p=>p.pupils.forEach(s=>jobs.push(()=>{
+      const body = { admissionNo:s.admissionNo, name:s.name, gender:s.gender, dob:s.dob, classId: p.to==='LEAVE' ? s.classId : p.to,
+        house:s.house, guardianName:s.guardianName, guardianPhone:s.guardianPhone, address:s.address,
+        status: p.to==='LEAVE' ? 'Inactive' : (s.status||'Active') };
+      return api(`/api/students/${s.id}`, { method:'PUT', body: JSON.stringify(body) });
+    })));
+    let failed = 0; const queue = jobs.slice();
+    await Promise.all(Array.from({length:4}, async ()=>{ while(queue.length){ const j = queue.shift(); try{ await j(); }catch(e){ failed++; } } }));
+    try{ DB.students = (await api('/api/students')).map(s=>({ ...s, id: normId(s.id), classId: normId(s.classId) })); }catch(e){}
+    invalidateDashboardScoreCache();
+    renderAll();
+    customAlert(failed ? `${moving-failed} moved, ${failed} could not be updated. Check the Students list and run it again for the rest.` : `Done — ${moving} pupil(s) updated.`);
+  });
 }
 
 /* ---------------------------------------------------------------
@@ -2865,6 +3254,7 @@ function rkRender(){
     body.innerHTML = fails + `<div class="card empty-state"><div class="icon">∅</div>No scores recorded for ${esc(term)}, ${esc(year)} here.</div>`;
     return;
   }
+  if(RK.tab==='support'){ body.innerHTML = fails + '<div class="card empty-state">Comparing with the previous term…</div>'; rkSupport(scoped, fails); return; }
   const html = RK.tab==='overview' ? rkOverview() : RK.tab==='students' ? rkBestStudents(scoped)
              : RK.tab==='subjects' ? rkSubjects(scoped) : rkBestClass(scoped);
   body.innerHTML = fails + html;
