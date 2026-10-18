@@ -504,6 +504,12 @@
     .dcard{padding:16px;}
     .motto-card{min-height:170px;}
   }
+  input.cell-input, select.cell-select, td input[type=text]{border:1px solid var(--line) !important; border-radius:6px !important; outline:none;}
+  .fee-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+  .fee-name{font-size:13px; font-weight:600; color:#fff; margin-bottom:6px; text-transform:none; letter-spacing:0;}
+  .fee-hint{font-size:11.5px; color:var(--muted); margin-top:5px; text-transform:none; letter-spacing:0; font-weight:400;}
+  @media(max-width:820px){ .fee-grid{grid-template-columns:1fr;} }
+
   /* Printing: only the report card(s), on white */
   @media print{
     body{background:#fff !important;}
@@ -1216,6 +1222,38 @@ function defaultRemark(){
 }
 function getRemark(studentId){
   return DB.remarks[remarkKey(studentId)] || defaultRemark();
+}
+/* Tuition fees differ by school level. They are stored in the term's existing fee field as
+   "LEVELS|pl=...|up=...|jhs=..." so no server change is needed. An older plain value (one fee for
+   everybody) is still understood and simply applies to all levels. */
+const FEE_GROUPS = [
+  {key:'pl',  label:'Preschool & Lower Primary', hint:'Nursery, KG 1–2, Basic 1–3'},
+  {key:'up',  label:'Upper Primary',             hint:'Basic 4–6'},
+  {key:'jhs', label:'JHS',                       hint:'Basic 7–9 / JHS'}
+];
+function parseFees(raw){
+  raw = (raw||'').toString();
+  if(raw.startsWith('LEVELS|')){
+    const out = {pl:'', up:'', jhs:''};
+    raw.split('|').slice(1).forEach(part=>{ const i = part.indexOf('='); if(i>0 && part.slice(0,i) in out) out[part.slice(0,i)] = part.slice(i+1); });
+    return out;
+  }
+  return {pl:raw, up:raw, jhs:raw};
+}
+function encodeFees(f){
+  const clean = v => (v||'').replace(/[|=]/g,'').trim();
+  const pl = clean(f.pl), up = clean(f.up), jhs = clean(f.jhs);
+  return (pl||up||jhs) ? `LEVELS|pl=${pl}|up=${up}|jhs=${jhs}` : '';
+}
+function feeGroupOfLevel(level){
+  return level==='Preschool' || level==='Lower Primary' ? 'pl' : level==='Upper Primary' ? 'up' : level==='JHS' ? 'jhs' : null;
+}
+function feeForClass(className){
+  const f = parseFees(getTermInfo().nextTermTuitionFee);
+  const g = feeGroupOfLevel(levelOfClass(className));
+  if(g) return f[g];
+  // a class we couldn't place in a level: only fill it in if every level pays the same
+  return (f.pl===f.up && f.up===f.jhs) ? f.pl : '';
 }
 function getTermInfo(){
   const t = DB.termInfo[ctxKey()];
@@ -2453,7 +2491,7 @@ function previewReport(classId, studentId){
         </tr>
         <tr>
           <td><i>Next Term Begins:</i><b>${esc(ti.nextTermBegins)}</b></td>
-          <td colspan="3"><i>Next Term's Tuition Fee:</i><b>${esc(ti.nextTermTuitionFee)}</b></td>
+          <td colspan="3"><i>Next Term's Tuition Fee:</i><b>${esc(feeForClass(cls.name))}</b></td>
         </tr>
         <tr>
           <td colspan="2"><b>${esc(set.poBox? 'P.O. Box '+set.poBox : '')}</b></td>
@@ -2876,13 +2914,19 @@ function renderSettings(){
   `).join('');
 
   const ti = getTermInfo();
+  const fees = parseFees(ti.nextTermTuitionFee);
   document.getElementById('termInfoHint').textContent = `for ${DB.settings.currentTerm}, ${DB.settings.currentYear} — used on printed reports`;
   document.getElementById('termInfoForm').innerHTML = `
     <div class="field"><label>Total School Days</label><input id="ti_days" value="${esc(ti.totalSchoolDays)}"></div>
     <div class="field"><label>Date of Issue</label><input id="ti_issue" value="${esc(ti.dateOfIssue)}" placeholder="e.g. 12th Dec 2026"></div>
     <div class="field"><label>Next Term Begins</label><input id="ti_next" value="${esc(ti.nextTermBegins)}" placeholder="e.g. 12th Jan 2027"></div>
-    <div class="field"><label>Next Term's Tuition Fee</label><input id="ti_fee" value="${esc(ti.nextTermTuitionFee)}"></div>
-    <div class="field" style="grid-column:span 2;"><label>Headmaster's Contact</label><input id="ti_hmcontact" value="${esc(ti.headmasterContact)}"></div>
+    <div class="field" style="grid-column:1/-1; margin-top:6px;">
+      <label>Next Term's Tuition Fee, by level</label>
+      <div class="fee-grid">
+        ${FEE_GROUPS.map(g=>`<div><div class="fee-name">${g.label}</div><input id="ti_fee_${g.key}" value="${esc(fees[g.key])}" placeholder="e.g. GH₵ 350"><div class="fee-hint">${g.hint}</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="field" style="grid-column:1/-1;"><label>Headmaster's Contact</label><input id="ti_hmcontact" value="${esc(ti.headmasterContact)}"></div>
   `;
 
   if(CURRENT_USER && CURRENT_USER.role === 'admin'){
@@ -2899,7 +2943,7 @@ document.getElementById('btnSaveTermInfo').addEventListener('click', async ()=>{
     totalSchoolDays: document.getElementById('ti_days').value.trim(),
     dateOfIssue: document.getElementById('ti_issue').value.trim(),
     nextTermBegins: document.getElementById('ti_next').value.trim(),
-    nextTermTuitionFee: document.getElementById('ti_fee').value.trim(),
+    nextTermTuitionFee: encodeFees({pl:document.getElementById('ti_fee_pl').value, up:document.getElementById('ti_fee_up').value, jhs:document.getElementById('ti_fee_jhs').value}),
     headmasterContact: document.getElementById('ti_hmcontact').value.trim(),
   };
   try{
