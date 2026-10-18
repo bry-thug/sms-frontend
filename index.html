@@ -1255,6 +1255,30 @@ function feeForClass(className){
   // a class we couldn't place in a level: only fill it in if every level pays the same
   return (f.pl===f.up && f.up===f.jhs) ? f.pl : '';
 }
+/* Bills: next term's fee for the pupil's level + arrears = total bill */
+function parseMoney(str){
+  const m = (str||'').toString().replace(/\s/g,'').match(/(\d[\d,]*\.?\d*)/);
+  return m ? parseFloat(m[1].replace(/,/g,'')) : null;
+}
+function moneyPrefix(str){ const m = (str||'').toString().match(/^[^\d]*/); return m ? m[0].trim() : ''; }
+function fmtMoney(n, prefix){
+  const dec = Number.isInteger(n) ? 0 : 2;
+  return `${prefix||'GH₵'} ${n.toLocaleString('en-GB',{minimumFractionDigits:dec, maximumFractionDigits:2})}`;
+}
+// rm may be passed in (e.g. while typing in the form); otherwise the saved remark is used.
+function billFor(classId, studentId, rm){
+  const cls = classById(classId);
+  rm = rm || getRemark(studentId);
+  const feeText = cls ? feeForClass(cls.name) : '';
+  const feeN = parseMoney(feeText), arrN = parseMoney(rm.billArrears);
+  const prefix = moneyPrefix(feeText) || moneyPrefix(rm.billArrears) || 'GH₵';
+  const out = { feeText, feeN, arrN,
+    arrearsText: arrN!==null ? fmtMoney(arrN, prefix) : (rm.billArrears||''),
+    total: null };
+  if(feeN!==null || arrN!==null) out.total = fmtMoney((feeN||0)+(arrN||0), prefix);
+  else out.total = rm.totalBills || '';   // nothing to add up — fall back to whatever was typed before
+  return out;
+}
 function getTermInfo(){
   const t = DB.termInfo[ctxKey()];
   return t || {totalSchoolDays:'', dateOfIssue:'', nextTermBegins:'', nextTermTuitionFee:'', headmasterContact:''};
@@ -2243,6 +2267,7 @@ document.getElementById('reportClassSelect').addEventListener('change', async ()
   try{ await loadScoresForClass(classId); }
   catch(e){ listEl.innerHTML = `<div class="warn-banner">⚠ ${esc(e.message)}</div>`; return; }
   await loadPreviousTermScores(classId);
+  await Promise.all(studentsInClass(classId).map(st=>loadRemark(st.id).catch(()=>{})));
   renderReportList();
 });
 document.getElementById('btnGenerateClass').addEventListener('click', ()=>{
@@ -2255,6 +2280,21 @@ document.getElementById('btnExportResults').addEventListener('click', ()=>{
   if(!classId){ customAlert('Select a class first.'); return; }
   exportClassResultsCSV(classId);
 });
+async function saveArrears(studentId, classId, inputEl){
+  const rm = { ...getRemark(studentId), pd: { ...getRemark(studentId).pd } };
+  rm.billArrears = inputEl.value.trim();
+  rm.totalBills = billFor(classId, studentId, rm).total || '';
+  const payload = { year: DB.settings.currentYear, term: DB.settings.currentTerm, ...rm };
+  inputEl.disabled = true;
+  try{
+    await api(`/api/remarks/${studentId}`, { method:'PUT', body: JSON.stringify(payload) });
+    DB.remarks[remarkKey(studentId)] = rm;
+    const cell = document.getElementById('bill_'+studentId);
+    if(cell) cell.textContent = rm.totalBills || '—';
+    inputEl.value = rm.billArrears;
+  }catch(e){ customAlert(e.message); inputEl.value = getRemark(studentId).billArrears; }
+  inputEl.disabled = false;
+}
 function renderReportList(){
   const classId = document.getElementById('reportClassSelect').value;
   const listEl = document.getElementById('reportList');
@@ -2271,7 +2311,7 @@ function renderReportList(){
   const rollCount = studentsInClass(classId).length;
 
   listEl.innerHTML = `${warnHtml}<div class="table-wrap"><table>
-    <thead><tr><th>Student</th><th>Total</th><th>Average</th><th>Position</th><th></th></tr></thead>
+    <thead><tr><th>Student</th><th>Total</th><th>Average</th><th>Position</th><th>Arrears</th><th>Total bill</th><th></th></tr></thead>
     <tbody>${results.map(r=>{
       const phone = (r.student.guardianPhone||'').replace(/[^\d]/g,'');
       const posStr = r.count? `${r.rank}/${rollCount}` : '—';
@@ -2279,6 +2319,8 @@ function renderReportList(){
       const waLink = phone? `<a class="btn btn-outline btn-sm" href="https://wa.me/${phone}?text=${msg}" target="_blank" rel="noopener">Notify Parent</a>` : `<span style="color:var(--muted); font-size:11px;">No phone</span>`;
       return `<tr>
       <td>${esc(r.student.name)}</td><td>${r.total||'—'}</td><td>${r.count?r.avg.toFixed(1)+'%':'—'}</td><td>${posStr}</td>
+      <td><input class="cell-input" style="width:92px;" inputmode="decimal" placeholder="0" value="${esc(getRemark(r.student.id).billArrears)}" onchange="saveArrears('${r.student.id}','${classId}',this)" aria-label="Arrears for ${esc(r.student.name)}"></td>
+      <td id="bill_${r.student.id}" style="white-space:nowrap; font-weight:600;">${esc(billFor(classId, r.student.id).total) || '—'}</td>
       <td style="white-space:nowrap; display:flex; gap:6px;">
         <button class="btn btn-outline btn-sm" onclick="previewReport('${classId}','${r.student.id}')">Preview Report</button>
         <button class="btn btn-outline btn-sm" onclick="openRemarkModal('${r.student.id}','${classId}')">Edit Details</button>
@@ -2307,8 +2349,8 @@ async function openRemarkModal(studentId, classId){
     <div style="font-size:11.5px; color:var(--muted); margin-bottom:12px;">${esc(DB.settings.currentTerm)}, ${esc(DB.settings.currentYear)}</div>
     <div class="form-grid cols-3">
       <div class="field"><label>Attendance (days present)</label><input id="rm_present" value="${esc(r.attendancePresent)}"></div>
-      <div class="field"><label>Bill In Arrears</label><input id="rm_arrears" value="${esc(r.billArrears)}"></div>
-      <div class="field"><label>Total Bills</label><input id="rm_totalBills" value="${esc(r.totalBills)}"></div>
+      <div class="field"><label>Bill In Arrears</label><input id="rm_arrears" inputmode="decimal" placeholder="e.g. 150" value="${esc(r.billArrears)}" oninput="updateModalTotal('${studentId}','${classId}')"></div>
+      <div class="field"><label>Total Bills (fees + arrears)</label><input id="rm_totalBills" readonly value="${esc(billFor(classId, studentId, r).total)}"><div style="font-size:11px; color:var(--muted); margin-top:4px;" id="rm_feeNote"></div></div>
     </div>
     <div class="form-grid cols-3" style="margin-top:12px;">
       <div class="field"><label>Conduct</label><input id="rm_conduct" value="${esc(r.conduct)}"></div>
@@ -2330,6 +2372,12 @@ async function openRemarkModal(studentId, classId){
       <button class="btn btn-primary" onclick="saveRemark('${studentId}','${classId}')">Save Details</button>
     </div>
   `);
+  updateModalTotal(studentId, classId);
+}
+function updateModalTotal(studentId, classId){
+  const b = billFor(classId, studentId, {billArrears: document.getElementById('rm_arrears').value, totalBills:''});
+  document.getElementById('rm_totalBills').value = b.total || '';
+  document.getElementById('rm_feeNote').textContent = b.feeN!==null ? `Next term's fee for this level: ${b.feeText}` : 'No fee set for this level yet — add it in Settings.';
 }
 async function saveRemark(studentId, classId){
   const pd = {};
@@ -2341,7 +2389,7 @@ async function saveRemark(studentId, classId){
     term: DB.settings.currentTerm,
     attendancePresent: document.getElementById('rm_present').value.trim(),
     billArrears: document.getElementById('rm_arrears').value.trim(),
-    totalBills: document.getElementById('rm_totalBills').value.trim(),
+    totalBills: billFor(classId, studentId, {billArrears: document.getElementById('rm_arrears').value, totalBills:''}).total || '',
     conduct: document.getElementById('rm_conduct').value.trim(),
     attitude: document.getElementById('rm_attitude').value.trim(),
     interest: document.getElementById('rm_interest').value.trim(),
@@ -2410,6 +2458,7 @@ function previewReport(classId, studentId){
   const set = DB.settings;
   const ti = getTermInfo();
   const rm = getRemark(studentId);
+  const bill = billFor(classId, studentId);
   const rollCount = studentsInClass(classId).length;
   const rankStr = r.count? `${r.rank}/${rollCount}` : `—/${rollCount}`;
   const prevAvg = studentPreviousAverage(classId, studentId);
@@ -2457,7 +2506,7 @@ function previewReport(classId, studentId){
     <div class="rc-actions">
       <button class="btn btn-gold btn-sm" onclick="window.print()">Print / Save as PDF</button>
       <button class="btn btn-outline btn-sm" onclick="openRemarkModal('${studentId}','${classId}')">Edit Details</button>
-      ${(st.guardianPhone||'').replace(/[^\d]/g,'')? `<a class="btn btn-outline btn-sm" href="https://wa.me/${(st.guardianPhone||'').replace(/[^\d]/g,'')}?text=${encodeURIComponent(`${set.schoolName}: ${st.name}'s ${set.currentTerm} report (${set.currentYear}) — Total: ${r.total}, Average: ${r.count?r.avg.toFixed(1)+'%':'—'}, Position: ${rankStr} in class.`)}" target="_blank" rel="noopener">Notify Parent (WhatsApp)</a>` : ''}
+      ${(st.guardianPhone||'').replace(/[^\d]/g,'')? `<a class="btn btn-outline btn-sm" href="https://wa.me/${(st.guardianPhone||'').replace(/[^\d]/g,'')}?text=${encodeURIComponent(`${set.schoolName}: ${st.name}'s ${set.currentTerm} report (${set.currentYear}) — Total: ${r.total}, Average: ${r.count?r.avg.toFixed(1)+'%':'—'}, Position: ${rankStr} in class.${bill.total? ' Total bill for next term (fees + arrears): '+bill.total+'.' : ''}`)}" target="_blank" rel="noopener">Notify Parent (WhatsApp)</a>` : ''}
       <button class="btn btn-danger btn-sm" onclick="deleteReport('${studentId}','${classId}')">Delete Report</button>
       <button class="btn btn-outline btn-sm" onclick="document.getElementById('reportPreview').innerHTML=''">Close Preview</button>
     </div>
@@ -2486,8 +2535,8 @@ function previewReport(classId, studentId){
         </tr>
         <tr>
           <td><i>Date of Issue:</i><b>${esc(ti.dateOfIssue)}</b></td>
-          <td><i>Bill In Arrears:</i><b>${esc(rm.billArrears)}</b></td>
-          <td colspan="2"><i>Total Bills:</i><b>${esc(rm.totalBills)}</b></td>
+          <td><i>Bill In Arrears:</i><b>${esc(bill.arrearsText)}</b></td>
+          <td colspan="2"><i>Total Bills:</i><b>${esc(bill.total)}</b></td>
         </tr>
         <tr>
           <td><i>Next Term Begins:</i><b>${esc(ti.nextTermBegins)}</b></td>
